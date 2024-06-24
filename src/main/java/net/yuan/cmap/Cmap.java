@@ -38,8 +38,6 @@ public class Cmap {
     private double lastZ = Double.NaN;
 
     private PrintWriter writer;
-    private List<String> coordinateBuffer;
-    private Timer timer;
 
     public Cmap() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -63,11 +61,6 @@ public class Cmap {
         } catch (IOException e) {
             LOGGER.error("Error initializing PrintWriter", e);
         }
-
-        // Use CopyOnWriteArrayList for thread-safe access
-        coordinateBuffer = new CopyOnWriteArrayList<>();
-        timer = new Timer();
-        scheduleWriteTask();
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -87,29 +80,12 @@ public class Cmap {
             if (x != lastX || z != lastZ) {
                 lastX = x;
                 lastZ = z;
-                coordinateBuffer.add(x + ", " + z);
-            }
-        }
-    }
 
-    private void scheduleWriteTask() {
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                writeCoordinatesToFile();
-            }
-        }, 1000, 1000);
-    }
-
-    private void writeCoordinatesToFile() {
-        if (!coordinateBuffer.isEmpty()) {
-            if (writer != null) {
-                for (String coordinates : coordinateBuffer) {
-                    writer.println(coordinates);
+                if (writer != null) {
+                    writer.println(x + ", " + z);
+                    writer.flush();
                 }
-                writer.flush();
             }
-            coordinateBuffer.clear();
         }
     }
 
