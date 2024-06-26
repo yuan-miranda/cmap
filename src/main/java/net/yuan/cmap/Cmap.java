@@ -1,7 +1,9 @@
 package net.yuan.cmap;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -17,47 +19,33 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(Cmap.MOD_ID)
 public class Cmap {
-    // Define mod id in a common place for everything to reference
     public static final String MOD_ID = "cmap";
-    // Directly reference a slf4j logger
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private double lastX = Double.NaN;
     private double lastZ = Double.NaN;
 
-    private PrintWriter writer;
+    private PrintWriter overworldPrintWriter;
+    private PrintWriter netherPrintWriter;
+    private PrintWriter endPrintWriter;
 
     public Cmap() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
-        // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
-
-        // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
-
-        // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
-
-        // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
 
         try {
-            File file = new File("player_coordinates.txt");
-            FileWriter fw = new FileWriter(file, true);
-            writer = new PrintWriter(fw);
+            overworldPrintWriter = new PrintWriter(new FileWriter("minecraft_overworld_player_coordinates.txt", true));
+            netherPrintWriter = new PrintWriter(new FileWriter("minecraft_the_nether_player_coordinates.txt", true));
+            endPrintWriter = new PrintWriter(new FileWriter("minecraft_the_end_player_coordinates.txt", true));
         } catch (IOException e) {
             LOGGER.error("Error initializing PrintWriter", e);
         }
@@ -65,8 +53,6 @@ public class Cmap {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
     }
-
-    // Add the example block item to the building blocks tab
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
     }
 
@@ -76,25 +62,30 @@ public class Cmap {
             Player player = event.player;
             double x = player.getX();
             double z = player.getZ();
+            ResourceKey<Level> currentDimension = player.level().dimension();
 
             if (x != lastX || z != lastZ) {
                 lastX = x;
                 lastZ = z;
 
-                if (writer != null) {
-                    writer.println(x + ", " + z);
-                    writer.flush();
+                if (currentDimension == Level.OVERWORLD) {
+                    overworldPrintWriter.println(x + ", " + z);
+                    overworldPrintWriter.flush();
+                } else if (currentDimension == Level.NETHER) {
+                    netherPrintWriter.println(x + ", " + z);
+                    netherPrintWriter.flush();
+                } else if (currentDimension == Level.END) {
+                    endPrintWriter.println(x + ", " + z);
+                    endPrintWriter.flush();
                 }
             }
         }
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
     }
 
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
         @SubscribeEvent
