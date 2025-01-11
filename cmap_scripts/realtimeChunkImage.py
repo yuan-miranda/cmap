@@ -32,6 +32,9 @@ def generate_image(resolution, type="overworld", zoom_levels=1):
                 chunk_image.save(tile)
 
 def update_image(resolution, coordinates, type="overworld"):
+    """
+    updates the image with the coordinates. The coordinates are black pixels on the image.
+    """
     # structure of the tiles folder:
     # tiles/type/zoom_level/x/y.png
     # 0/
@@ -120,7 +123,7 @@ def get_coordinates(file_path):
 
 def get_coordinates_and_truncate(file_path):
     """
-    read from the file and return the coordinates as a numpy array; [(x, z), ...]
+    read from the file and return the coordinates as a numpy array; [(x, z), ...]. Truncate the file after reading.
     """
     coordinates = []
     with open(file_path, "r+") as file:
@@ -171,7 +174,7 @@ def main():
                         coordinates = type_coordinates.get(type, overworld_coordinates)
                         update_image(resolution, coordinates, type)
 
-                    time.sleep(5)
+                    time.sleep(2)
 
             except KeyboardInterrupt:
                 print("KeyboardInterrupt")

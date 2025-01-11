@@ -1,7 +1,7 @@
 resolution = 8192;
 center = {
     centerX: resolution / 2,
-    centerY: -resolution / 2
+    centerY: resolution / 2
 }
 // change based on how many zoom levels you have in i.e. tiles/type=overworld folder.
 zoom = {
@@ -48,7 +48,7 @@ function displayCoordinates(map) {
         const offsetX = Math.floor(x - center.centerX);
         const offsetY = Math.floor(y - center.centerY);
         document.getElementById('x').textContent = offsetX;
-        document.getElementById('y').textContent = offsetY;
+        document.getElementById('z').textContent = offsetY;
     });
 }
 
@@ -81,7 +81,8 @@ function selectTypeListener() {
 function updateTiles() {
     const currentCenter = map.getCenter();
     const currentZoom = map.getZoom();
-    const newTilesUrl = `/tiles/${document.getElementById('type').value}/{z}/{x}/{y}.png`;
+    const timestamp = new Date().getTime();
+    const newTilesUrl = `/tiles/${document.getElementById('type').value}/{z}/{x}/{y}.png?${timestamp}`;
 
     // remove all the current tiles
     map.eachLayer((layer) => {
