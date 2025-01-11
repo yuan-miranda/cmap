@@ -1,0 +1,26 @@
+#map { height: 100vh; }
+/* fixed position bottom left */
+.coordinateDisplay {
+    display: flex;
+    font-family: Arial, Helvetica, sans-serif;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 0 10px;
+    border-radius: 5px;
+    margin: 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+.coordinateDisplay #type {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-right: 10px;
+    background-color: transparent;
+    border: none;
+}
+.coordinateDisplay #type option {
+    font-weight: normal;
+}

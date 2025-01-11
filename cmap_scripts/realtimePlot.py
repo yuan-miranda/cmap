@@ -5,16 +5,9 @@ import numpy as np
 # north = downward
 # east = rightward
 
-# NOTE: change the following paths to the paths where your player coordinates are stored.
-# minecraft
-# overworld_path = r"C:\Users\yuane\AppData\Roaming\.minecraft\minecraft_overworld_player_coordinates.txt"
-# nether_path = r"C:\Users\yuane\AppData\Roaming\.minecraft\minecraft_the_nether_player_coordinates.txt"
-# end_path = r"C:\Users\yuane\AppData\Roaming\.minecraft\minecraft_the_end_player_coordinates.txt"
-
-# dev
-overworld_path = r"C:\Users\yuane\Documents\cmap-origin\cmap-forge-1.21-51.0.33\run\minecraft_overworld_player_coordinates.txt"
-nether_path = r"C:\Users\yuane\Documents\cmap-origin\cmap-forge-1.21-51.0.33\run\minecraft_the_nether_player_coordinates.txt"
-end_path = r"C:\Users\yuane\Documents\cmap-origin\cmap-forge-1.21-51.0.33\run\minecraft_the_end_player_coordinates.txt"
+overworld_path = "minecraft_overworld_player_coordinates.txt"
+nether_path = "minecraft_the_nether_player_coordinates.txt"
+end_path = "minecraft_the_end_player_coordinates.txt"
 
 resolution = 100000
 
