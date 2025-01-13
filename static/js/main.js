@@ -1,12 +1,13 @@
-resolution = 8192;
-center = {
+const resolution = 32768;
+const tileSize = 8192;
+const center = {
     centerX: resolution / 2,
-    centerY: resolution / 2
+    centerY: -resolution / 2
 }
 // change based on how many zoom levels you have in i.e. tiles/type=overworld folder.
-zoom = {
+const zoom = {
     min: 0,
-    max: 4
+    max: 2
 }
 let map;
 
@@ -17,7 +18,7 @@ function getMap() {
         minZoom: zoom.min,
         maxZoom: zoom.max,
         maxBounds: [[0, resolution], [-resolution, 0]],
-        maxBoundsViscosity: 1.0
+        maxBoundsViscosity: 0.7
     }).setView([center.centerY, center.centerX], 0);
     return map;
 }
@@ -25,7 +26,7 @@ function getMap() {
 function addTileLayer(map, tilesUrl) {
     // add the tiles to the map
     L.tileLayer(tilesUrl, {
-        tileSize: resolution,
+        tileSize: tileSize,
         noWrap: true
     }).addTo(map);
 }
@@ -48,7 +49,7 @@ function displayCoordinates(map) {
         const offsetX = Math.floor(x - center.centerX);
         const offsetY = Math.floor(y - center.centerY);
         document.getElementById('x').textContent = offsetX;
-        document.getElementById('z').textContent = offsetY;
+        document.getElementById('z').textContent = -offsetY;
     });
 }
 
@@ -96,5 +97,5 @@ function updateTiles() {
 
 document.addEventListener('DOMContentLoaded', () => {
     selectTypeListener();
-    setInterval(updateTiles, 10000);
+    // setInterval(updateTiles, 10000);
 });

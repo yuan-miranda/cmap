@@ -9,6 +9,7 @@ import os
 # north = downward
 # east = rightward
 
+MAX_CHUNK_SIZE = 8192
 overworld_path = "minecraft_overworld_player_coordinates.txt"
 nether_path = "minecraft_the_nether_player_coordinates.txt"
 end_path = "minecraft_the_end_player_coordinates.txt"
@@ -19,13 +20,22 @@ def generate_image(resolution, type="overworld", zoom_levels=1):
     """
     os.makedirs(f"../tiles/{type}", exist_ok=True)
 
-    for zoom_level in range(zoom_levels):
-        chunk_size = resolution // (2 ** zoom_level)
-        num_chunks = resolution // chunk_size
+    if resolution > MAX_CHUNK_SIZE and (resolution & (resolution - 1)) != 0:
+        print(f"resolution must be divisible by 8192, and is even i.e. 8192=1x1, 16384=2x2")
+        return
 
-        for x_level in range(num_chunks):
-            for y_level in range(num_chunks):
-                chunk_image = Image.fromarray(np.ones((chunk_size, chunk_size, 3), dtype=np.uint8) * 255)
+    chunk_multiplier = max(1, resolution // MAX_CHUNK_SIZE)
+
+    for zoom_level in range(zoom_levels):
+        base_chunk_size = resolution // (2 ** zoom_level)
+        # adjusted_chunk_size = min(base_chunk_size, MAX_CHUNK_SIZE)
+        adjusted_chunk_size = base_chunk_size // chunk_multiplier
+        chunk_per_axis = resolution // base_chunk_size
+        total_chunks = chunk_per_axis * chunk_multiplier
+
+        for x_level in range(total_chunks):
+            for y_level in range(total_chunks):
+                chunk_image = Image.fromarray(np.ones((adjusted_chunk_size, adjusted_chunk_size), dtype=np.uint8) * 255, mode="L")
                 tile = f"../tiles/{type}/{zoom_level}/{x_level}/{y_level}.png"
 
                 os.makedirs(os.path.dirname(tile), exist_ok=True)
@@ -58,10 +68,16 @@ def update_image(resolution, coordinates, type="overworld"):
     # tiles/type/zoom_level/x/y.png
     # same structure as tiles
 
+    os.makedirs(f"../tiles/{type}", exist_ok=True)
+
     # early return if the coordinates is empty
     if len(coordinates) == 0: return
 
-    os.makedirs(f"../tiles/{type}", exist_ok=True)
+    # check if the resolution is valid
+    if resolution > MAX_CHUNK_SIZE and (resolution & (resolution - 1)) != 0:
+        print(f"resolution must be divisible by 8192, and is even i.e. 8192=1x1, 16384=2x2")
+        return
+
     offset = resolution // 2
 
     # get zoom level folder names (0, 1, ...)
@@ -70,31 +86,38 @@ def update_image(resolution, coordinates, type="overworld"):
 
     temp_tile = None
     temp_chunk_image = None
-    try:
-        for zoom_level in zoom_levels:
-            chunk_size = resolution // (2 ** int(zoom_level))
-            num_chunks = resolution // chunk_size
 
-            for x_level in range(num_chunks):
-                for y_level in range(num_chunks):
+    try:
+        chunk_multiplier = max(1, resolution // MAX_CHUNK_SIZE)
+
+        for zoom_level in zoom_levels:
+            zoom_level = int(zoom_level)
+            base_chunk_size = resolution // (2 ** zoom_level)
+             # adjusted_chunk_size = min(base_chunk_size, MAX_CHUNK_SIZE)
+            adjusted_chunk_size = base_chunk_size // chunk_multiplier
+            chunk_per_axis = resolution // base_chunk_size
+            total_chunks = chunk_per_axis * chunk_multiplier
+
+            for x_level in range(total_chunks):
+                for y_level in range(total_chunks):
                     tile = f"../tiles/{type}/{zoom_level}/{x_level}/{y_level}.png"
                     chunk_image = Image.open(tile)
 
                     temp_tile = tile
                     temp_chunk_image = chunk_image.copy()
                     for x, z in coordinates:
-                        row = (x + offset) // chunk_size
-                        col = (z + offset) // chunk_size
+                        row = (x + offset) // adjusted_chunk_size
+                        col = (z + offset) // adjusted_chunk_size
 
                         if x_level == row and y_level == col:
-                            start_x = row * chunk_size - offset
-                            start_z = col * chunk_size - offset
+                            start_x = row * adjusted_chunk_size - offset
+                            start_z = col * adjusted_chunk_size - offset
                             x_rel = x - start_x
                             z_rel = z - start_z
 
                             # check if the pixel is within the chunk
-                            if 0 <= x_rel < chunk_size and 0 <= z_rel < chunk_size:
-                                chunk_image.putpixel((x_rel, z_rel), (0, 0, 0))
+                            if 0 <= x_rel < adjusted_chunk_size and 0 <= z_rel < adjusted_chunk_size:
+                                chunk_image.putpixel((x_rel, z_rel), 0)
 
                     chunk_image.save(tile)
 
@@ -102,8 +125,6 @@ def update_image(resolution, coordinates, type="overworld"):
         if temp_chunk_image is not None:
             temp_chunk_image.save(temp_tile)
         raise e
-    
-    return
 
 def get_coordinates(file_path):
     """
@@ -143,7 +164,7 @@ def get_coordinates_and_truncate(file_path):
     return np.array(coordinates)
 
 def main():
-    resolution = 8192
+    resolution = 8192 * 4
     overworld_coordinates = get_coordinates(overworld_path)
     nether_coordinates = get_coordinates(nether_path)
     end_coordinates = get_coordinates(end_path)
