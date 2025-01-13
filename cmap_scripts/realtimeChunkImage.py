@@ -28,7 +28,6 @@ def generate_image(resolution, type="overworld", zoom_levels=1):
 
     for zoom_level in range(zoom_levels):
         base_chunk_size = resolution // (2 ** zoom_level)
-        # adjusted_chunk_size = min(base_chunk_size, MAX_CHUNK_SIZE)
         adjusted_chunk_size = base_chunk_size // chunk_multiplier
         chunk_per_axis = resolution // base_chunk_size
         total_chunks = chunk_per_axis * chunk_multiplier
@@ -93,7 +92,6 @@ def update_image(resolution, coordinates, type="overworld"):
         for zoom_level in zoom_levels:
             zoom_level = int(zoom_level)
             base_chunk_size = resolution // (2 ** zoom_level)
-             # adjusted_chunk_size = min(base_chunk_size, MAX_CHUNK_SIZE)
             adjusted_chunk_size = base_chunk_size // chunk_multiplier
             chunk_per_axis = resolution // base_chunk_size
             total_chunks = chunk_per_axis * chunk_multiplier
