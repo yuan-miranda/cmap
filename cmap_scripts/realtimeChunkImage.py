@@ -5,14 +5,25 @@ import time
 from PIL import Image
 import sys
 import os
+import psycopg2
 
 # north = downward
 # east = rightward
+
+DB_HOST = "cmapinteractive.ddns.net"
+DB_PORT = 5432
+DB_NAME = "cmapinteractive"
+DB_USER = "postgres"
+DB_PASSWORD = ""
 
 MAX_CHUNK_SIZE = 8192
 overworld_path = "minecraft_overworld_player_coordinates.txt"
 nether_path = "minecraft_the_nether_player_coordinates.txt"
 end_path = "minecraft_the_end_player_coordinates.txt"
+
+overworld_path_cumulative = "minecraft_overworld_player_coordinates_cumulative.txt"
+nether_path_cumulative = "minecraft_the_nether_player_coordinates_cumulative.txt"
+end_path_cumulative = "minecraft_the_end_player_coordinates_cumulative.txt"
 
 def generate_image(resolution, type="overworld", zoom_levels=1):
     """
@@ -124,37 +135,115 @@ def update_image(resolution, coordinates, type="overworld"):
             temp_chunk_image.save(temp_tile)
         raise e
 
-def get_coordinates(file_path):
+def get_db_connection():
+    try:
+        connection = psycopg2.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD
+        )
+        return connection
+    except Exception as e:
+        print(f"Error connecting to the database: {e}")
+        return None
+
+def get_coordinates_from_db(file_path, table_name):
+    coordinates = []
+    cumulative_path = file_path.replace("player_coordinates", "player_coordinates_cumulative")
+    conn = get_db_connection()
+    if not conn: return np.array(coordinates)
+
+    try:
+        with conn.cursor() as cursor, open(cumulative_path, "a") as cumulative_file:
+            query = f"SELECT x, z FROM {table_name}"
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            for row in rows:
+                x, z = row
+                cumulative_file.write(f"{x}, {z}\n")
+                coordinates.append((round(x), round(z)))
+            
+            cumulative_file.flush()
+    except Exception as e:
+        print(f"Error getting coordinates from the database: {e}")
+    finally:
+        conn.close()
+
+    return np.array(coordinates)
+
+
+def get_coordinates_from_db_and_truncate(file_path, table_name):
+    coordinates = []
+    cumulative_path = file_path.replace("player_coordinates", "player_coordinates_cumulative")
+    conn = get_db_connection()
+    if not conn: return np.array(coordinates)
+
+    try:
+        with conn.cursor() as cursor, open(cumulative_path, "a") as cumulative_file:
+        # with conn.cursor() as cursor:
+            query = f"SELECT x, z FROM {table_name}"
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+            for row in rows:
+                x, z = row
+                cumulative_file.write(f"{x}, {z}\n")
+                coordinates.append((round(x), round(z)))
+
+            cumulative_file.flush()
+
+            # truncate the table
+            query = f"TRUNCATE TABLE {table_name}"
+            cursor.execute(query)
+            conn.commit()
+    except Exception as e:
+        print(f"Error getting coordinates from the database: {e}")
+    finally:
+        conn.close()
+
+    return np.array(coordinates)
+
+def get_coordinates(file_path, type):
     """
     read from the file and return the coordinates as a numpy array; [(x, z), ...]
     """
     coordinates = []
-    with open(file_path, "r") as file:
+    cumulative_path = file_path.replace("player_coordinates", "player_coordinates_cumulative")
+    with open(file_path, "r") as file, open(cumulative_path, "a") as cumulative_file:
         if file.readline() == "": return np.array(coordinates)
         for line in file:
             try:
                 x, z = map(float, line.strip().split(", "))
+                cumulative_file.write(f"{x}, {z}\n")
                 coordinates.append((round(x), round(z)))
             except Exception as e:
                 continue
+
+        cumulative_file.flush()
         file.close()
     return np.array(coordinates)
 
-def get_coordinates_and_truncate(file_path):
+def get_coordinates_and_truncate(file_path, type):
     """
     read from the file and return the coordinates as a numpy array; [(x, z), ...]. Truncate the file after reading.
     """
     coordinates = []
-    with open(file_path, "r+") as file:
+    cumulative_path = file_path.replace("player_coordinates", "player_coordinates_cumulative")
+    with open(file_path, "r+") as file, open(cumulative_path, "a") as cumulative_file:
         lines = file.readlines()
         if lines == []: return np.array(coordinates)
         for line in lines:
             try:
                 x, z = map(float, line.strip().split(", "))
+                cumulative_file.write(f"{x}, {z}\n")
                 coordinates.append((round(x), round(z)))
             except Exception as e:
                 continue
         
+        cumulative_file.flush()
         # truncate the file
         file.seek(0)
         file.truncate(0)
@@ -163,9 +252,13 @@ def get_coordinates_and_truncate(file_path):
 
 def main():
     resolution = 8192 * 4
-    overworld_coordinates = get_coordinates(overworld_path)
-    nether_coordinates = get_coordinates(nether_path)
-    end_coordinates = get_coordinates(end_path)
+    # overworld_coordinates = get_coordinates(overworld_path, "overworld")
+    # nether_coordinates = get_coordinates(nether_path, "nether")
+    # end_coordinates = get_coordinates(end_path, "the_end")
+
+    overworld_coordinates = get_coordinates_from_db(overworld_path, "overworld")
+    nether_coordinates = get_coordinates_from_db(nether_path, "nether")
+    end_coordinates = get_coordinates_from_db(end_path, "the_end")
 
     if len(sys.argv) > 1 and sys.argv[1] in ["update", "init", "realtime"]:
         # validate the arguments
@@ -178,9 +271,17 @@ def main():
                 return
             try:
                 while True:
-                    overworld_coordinates = get_coordinates_and_truncate(overworld_path)
-                    nether_coordinates = get_coordinates_and_truncate(nether_path)
-                    end_coordinates = get_coordinates_and_truncate(end_path)
+                    # start_time = time.time()
+                    # overworld_coordinates = get_coordinates_and_truncate(overworld_path, "overworld")
+                    # nether_coordinates = get_coordinates_and_truncate(nether_path, "nether")
+                    # end_coordinates = get_coordinates_and_truncate(end_path, "the_end")
+
+                    start_time_get_coordinates = time.time()
+                    overworld_coordinates = get_coordinates_from_db_and_truncate(overworld_path, "overworld")
+                    nether_coordinates = get_coordinates_from_db_and_truncate(nether_path, "nether")
+                    end_coordinates = get_coordinates_from_db_and_truncate(end_path, "the_end")
+                    end_time_get_coordinates = time.time()
+                    # print(f"get coordinates time taken: {end_time_get_coordinates - start_time_get_coordinates:.2f} seconds")
 
                     type_coordinates = {
                         "overworld": overworld_coordinates,
@@ -189,12 +290,16 @@ def main():
                     }
 
                     # update each type
+                    start_time_update_image = time.time()
                     for type in type_coordinates:
                         coordinates = type_coordinates.get(type, overworld_coordinates)
                         update_image(resolution, coordinates, type)
+                    end_time_update_image = time.time()
+                    # print(f"update image time taken: {end_time_update_image - start_time_update_image:.2f} seconds")
 
-                    time.sleep(2)
+                    print(f"o: {len(overworld_coordinates)} n: {len(nether_coordinates)} e: {len(end_coordinates)} get coordinates: {end_time_get_coordinates - start_time_get_coordinates:.2f} seconds update image: {end_time_update_image - start_time_update_image:.2f} seconds")
 
+                    time.sleep(1)
             except KeyboardInterrupt:
                 print("KeyboardInterrupt")
                 return

@@ -7,7 +7,7 @@ const center = {
 // change based on how many zoom levels you have in i.e. tiles/type=overworld folder.
 const zoom = {
     min: 0,
-    max: 2
+    max: 0
 }
 let map;
 
@@ -97,5 +97,5 @@ function updateTiles() {
 
 document.addEventListener('DOMContentLoaded', () => {
     selectTypeListener();
-    // setInterval(updateTiles, 10000);
+    setInterval(updateTiles, 10000);
 });
