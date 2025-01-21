@@ -10,10 +10,13 @@ import psycopg2
 # north = downward
 # east = rightward
 
-DB_HOST = "cmapinteractive.ddns.net"
+# for the cmap plugin
+# /cmap dbconfig <host> <port> <dbname> <user> <password>
+
+DB_HOST = ""
 DB_PORT = 5432
-DB_NAME = "cmapinteractive"
-DB_USER = "postgres"
+DB_NAME = ""
+DB_USER = ""
 DB_PASSWORD = ""
 
 MAX_CHUNK_SIZE = 8192
@@ -136,6 +139,9 @@ def update_image(resolution, coordinates, type="overworld"):
         raise e
 
 def get_db_connection():
+    """
+    connect to the database and return the connection
+    """
     try:
         connection = psycopg2.connect(
             host=DB_HOST,
@@ -150,6 +156,9 @@ def get_db_connection():
         return None
 
 def get_coordinates_from_db(file_path, table_name):
+    """
+    read from the database and return the coordinates as a numpy array; [(x, z), ...]
+    """
     coordinates = []
     cumulative_path = file_path.replace("player_coordinates", "player_coordinates_cumulative")
     conn = get_db_connection()
@@ -176,6 +185,9 @@ def get_coordinates_from_db(file_path, table_name):
 
 
 def get_coordinates_from_db_and_truncate(file_path, table_name):
+    """
+    read from the database and return the coordinates as a numpy array; [(x, z), ...]. Truncate the table after reading.
+    """
     coordinates = []
     cumulative_path = file_path.replace("player_coordinates", "player_coordinates_cumulative")
     conn = get_db_connection()
@@ -206,7 +218,7 @@ def get_coordinates_from_db_and_truncate(file_path, table_name):
 
     return np.array(coordinates)
 
-def get_coordinates(file_path, type):
+def get_coordinates(file_path):
     """
     read from the file and return the coordinates as a numpy array; [(x, z), ...]
     """
@@ -226,7 +238,7 @@ def get_coordinates(file_path, type):
         file.close()
     return np.array(coordinates)
 
-def get_coordinates_and_truncate(file_path, type):
+def get_coordinates_and_truncate(file_path):
     """
     read from the file and return the coordinates as a numpy array; [(x, z), ...]. Truncate the file after reading.
     """
@@ -252,14 +264,6 @@ def get_coordinates_and_truncate(file_path, type):
 
 def main():
     resolution = 8192 * 4
-    # overworld_coordinates = get_coordinates(overworld_path, "overworld")
-    # nether_coordinates = get_coordinates(nether_path, "nether")
-    # end_coordinates = get_coordinates(end_path, "the_end")
-
-    overworld_coordinates = get_coordinates_from_db(overworld_path, "overworld")
-    nether_coordinates = get_coordinates_from_db(nether_path, "nether")
-    end_coordinates = get_coordinates_from_db(end_path, "the_end")
-
     if len(sys.argv) > 1 and sys.argv[1] in ["update", "init", "realtime"]:
         # validate the arguments
         action = sys.argv[1]
@@ -267,21 +271,15 @@ def main():
         # update the images in real time
         if action == "realtime":
             if len(sys.argv) > 2:
-                print("usage: python chunkImage.py realtime\n")
+                print("usage: python realtimeChunkImage.py realtime\n")
                 return
             try:
                 while True:
-                    # start_time = time.time()
-                    # overworld_coordinates = get_coordinates_and_truncate(overworld_path, "overworld")
-                    # nether_coordinates = get_coordinates_and_truncate(nether_path, "nether")
-                    # end_coordinates = get_coordinates_and_truncate(end_path, "the_end")
-
                     start_time_get_coordinates = time.time()
                     overworld_coordinates = get_coordinates_from_db_and_truncate(overworld_path, "overworld")
                     nether_coordinates = get_coordinates_from_db_and_truncate(nether_path, "nether")
                     end_coordinates = get_coordinates_from_db_and_truncate(end_path, "the_end")
                     end_time_get_coordinates = time.time()
-                    # print(f"get coordinates time taken: {end_time_get_coordinates - start_time_get_coordinates:.2f} seconds")
 
                     type_coordinates = {
                         "overworld": overworld_coordinates,
@@ -295,7 +293,6 @@ def main():
                         coordinates = type_coordinates.get(type, overworld_coordinates)
                         update_image(resolution, coordinates, type)
                     end_time_update_image = time.time()
-                    # print(f"update image time taken: {end_time_update_image - start_time_update_image:.2f} seconds")
 
                     print(f"o: {len(overworld_coordinates)} n: {len(nether_coordinates)} e: {len(end_coordinates)} get coordinates: {end_time_get_coordinates - start_time_get_coordinates:.2f} seconds update image: {end_time_update_image - start_time_update_image:.2f} seconds")
 
@@ -304,14 +301,14 @@ def main():
                 print("KeyboardInterrupt")
                 return
 
-        # if its not realtime
         type = sys.argv[2] if len(sys.argv) > 2 else "overworld"
         zoom_level = int(sys.argv[3]) if len(sys.argv) > 3 else 1
 
+        # "update" will use the coordinates from the file instead of the database.
         type_coordinates = {
-            "overworld": overworld_coordinates,
-            "nether": nether_coordinates,
-            "end": end_coordinates
+            "overworld": get_coordinates(overworld_path),
+            "nether": get_coordinates(nether_path),
+            "end": get_coordinates(end_path)
         }
 
         # check if the type is valid
@@ -334,16 +331,14 @@ def main():
         else:
             print("invalid action")
     else:
-        print("usage: python chunkImage.py init [<type=OVERWORLD|nether|end> <zoom_level=1>]")
-        print("usage: python chunkImage.py update [<type=OVERWORLD|nether|end>]\n")
-        print("usage: python chunkImage.py realtime\n")
+        print("usage: python realtimeChunkImage.py init [<type=OVERWORLD|nether|end> <zoom_level=1>]")
+        print("usage: python realtimeChunkImage.py update [<type=OVERWORLD|nether|end>]\n")
+        print("usage: python realtimeChunkImage.py realtime\n")
         print("\tinit: generate blank images")
         print("\tupdate: update the existing images")
         print("\trealtime: update the existing images in real time. ctrl+c to stop the program")
         print("\ttype: specify the type of minecraft world dimension (overworld, nether, end) default is 'overworld'")
         print("\tzoom_level: specify the how many times the image should be divided into chunks, used in Leaflet.js, default is 1\n")
-
-        # there is no option to update the zoom level of the existing images becasue that would mean the images would have to be resized and the coordinates would have to be recalculated, too lazy lol.
 
 if __name__ == "__main__":
     start_time = time.time()
