@@ -26,14 +26,14 @@ py realtimeChunkImage.py realtime
 ```
 
 ## Example Commands
-| Command                       | Operation                                                                                           |
-|-------------------------------|-----------------------------------------------------------------------------------------------------|
-| py realtimeChunkImage.py init | initialize blank white tiles (overworld)                                                        |
-| py realtimeChunkImage.py init end | specify the tiles to make                                                                   |
-| py realtimeChunkImage.py init end 2 | make tiles for end with 2 zoom level (for leaflet)                                        |
-| py realtimeChunkImage.py update | update the image with the coords from the coordinate files (overworld, along the zoom levels) |
-| py realtimeChunkImage.py update nether | update the nether tiles only                                                           |
-| py realtimeChunkImage.py realtime | update the entire overworld, nether, end tiles in realtime                                  |
+| Command                                | Operation                                                                                       |
+|----------------------------------------|-------------------------------------------------------------------------------------------------|
+| py realtimeChunkImage.py init          | initialize blank white tiles (overworld)                                                        |
+| py realtimeChunkImage.py init end      | specify the tiles to make                                                                       |
+| py realtimeChunkImage.py init end 2    | make tiles for end with 2 zoom level (for leaflet)                                              |
+| py realtimeChunkImage.py update        | update the image with the coords from the coordinate files (overworld, along the zoom levels)   |
+| py realtimeChunkImage.py update nether | update the nether tiles only                                                                    |
+| py realtimeChunkImage.py realtime      | update the entire overworld, nether, end tiles in realtime                                      |
 
 ## Installation Setup
 Note: You must have `Git`, `Python 3` or above, `Node.js` and `npm` installed prior to this setup.
