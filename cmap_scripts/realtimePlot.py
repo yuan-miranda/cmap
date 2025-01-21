@@ -5,9 +5,9 @@ import numpy as np
 # north = downward
 # east = rightward
 
-overworld_path = "minecraft_overworld_player_coordinates.txt"
-nether_path = "minecraft_the_nether_player_coordinates.txt"
-end_path = "minecraft_the_end_player_coordinates.txt"
+overworld_path = "minecraft_overworld_player_coordinates_cumulative.txt"
+nether_path = "minecraft_the_nether_player_coordinates_cumulative.txt"
+end_path = "minecraft_the_end_player_coordinates_cumulative.txt"
 
 resolution = 100000
 

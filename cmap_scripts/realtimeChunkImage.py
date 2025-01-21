@@ -19,6 +19,7 @@ DB_NAME = ""
 DB_USER = ""
 DB_PASSWORD = ""
 
+RESOLUTION = 32768
 MAX_CHUNK_SIZE = 8192
 overworld_path = "minecraft_overworld_player_coordinates.txt"
 nether_path = "minecraft_the_nether_player_coordinates.txt"
@@ -28,22 +29,22 @@ overworld_path_cumulative = "minecraft_overworld_player_coordinates_cumulative.t
 nether_path_cumulative = "minecraft_the_nether_player_coordinates_cumulative.txt"
 end_path_cumulative = "minecraft_the_end_player_coordinates_cumulative.txt"
 
-def generate_image(resolution, type="overworld", zoom_levels=1):
+def generate_image(type="overworld", zoom_levels=1):
     """
-    generates blank white images. Each zoom_level the quality of the image doesnt increase, the number of tiles does. It will be kind of pixelated.
+    generates blank white images. Each zoom_level the quality of the image doesnt increase, the number of tiles does.
     """
     os.makedirs(f"../tiles/{type}", exist_ok=True)
 
-    if resolution > MAX_CHUNK_SIZE and (resolution & (resolution - 1)) != 0:
+    if RESOLUTION > MAX_CHUNK_SIZE and (RESOLUTION & (RESOLUTION - 1)) != 0:
         print(f"resolution must be divisible by 8192, and is even i.e. 8192=1x1, 16384=2x2")
         return
 
-    chunk_multiplier = max(1, resolution // MAX_CHUNK_SIZE)
+    chunk_multiplier = max(1, RESOLUTION // MAX_CHUNK_SIZE)
 
     for zoom_level in range(zoom_levels):
-        base_chunk_size = resolution // (2 ** zoom_level)
+        base_chunk_size = RESOLUTION // (2 ** zoom_level)
         adjusted_chunk_size = base_chunk_size // chunk_multiplier
-        chunk_per_axis = resolution // base_chunk_size
+        chunk_per_axis = RESOLUTION // base_chunk_size
         total_chunks = chunk_per_axis * chunk_multiplier
 
         for x_level in range(total_chunks):
@@ -54,7 +55,7 @@ def generate_image(resolution, type="overworld", zoom_levels=1):
                 os.makedirs(os.path.dirname(tile), exist_ok=True)
                 chunk_image.save(tile)
 
-def update_image(resolution, coordinates, type="overworld"):
+def update_image(coordinates, type="overworld"):
     """
     updates the image with the coordinates. The coordinates are black pixels on the image.
     """
@@ -87,11 +88,11 @@ def update_image(resolution, coordinates, type="overworld"):
     if len(coordinates) == 0: return
 
     # check if the resolution is valid
-    if resolution > MAX_CHUNK_SIZE and (resolution & (resolution - 1)) != 0:
+    if RESOLUTION > MAX_CHUNK_SIZE and (RESOLUTION & (RESOLUTION - 1)) != 0:
         print(f"resolution must be divisible by 8192, and is even i.e. 8192=1x1, 16384=2x2")
         return
 
-    offset = resolution // 2
+    offset = RESOLUTION // 2
 
     # get zoom level folder names (0, 1, ...)
     zoom_levels = sorted(os.listdir(f"../tiles/{type}"), key=int)
@@ -101,13 +102,13 @@ def update_image(resolution, coordinates, type="overworld"):
     temp_chunk_image = None
 
     try:
-        chunk_multiplier = max(1, resolution // MAX_CHUNK_SIZE)
+        chunk_multiplier = max(1, RESOLUTION // MAX_CHUNK_SIZE)
 
         for zoom_level in zoom_levels:
             zoom_level = int(zoom_level)
-            base_chunk_size = resolution // (2 ** zoom_level)
+            base_chunk_size = RESOLUTION // (2 ** zoom_level)
             adjusted_chunk_size = base_chunk_size // chunk_multiplier
-            chunk_per_axis = resolution // base_chunk_size
+            chunk_per_axis = RESOLUTION // base_chunk_size
             total_chunks = chunk_per_axis * chunk_multiplier
 
             for x_level in range(total_chunks):
@@ -263,7 +264,6 @@ def get_coordinates_and_truncate(file_path):
     return np.array(coordinates)
 
 def main():
-    resolution = 8192 * 4
     if len(sys.argv) > 1 and sys.argv[1] in ["update", "init", "realtime"]:
         # validate the arguments
         action = sys.argv[1]
@@ -291,7 +291,7 @@ def main():
                     start_time_update_image = time.time()
                     for type in type_coordinates:
                         coordinates = type_coordinates.get(type, overworld_coordinates)
-                        update_image(resolution, coordinates, type)
+                        update_image(coordinates, type)
                     end_time_update_image = time.time()
 
                     print(f"o: {len(overworld_coordinates)} n: {len(nether_coordinates)} e: {len(end_coordinates)} get coordinates: {end_time_get_coordinates - start_time_get_coordinates:.2f} seconds update image: {end_time_update_image - start_time_update_image:.2f} seconds")
@@ -320,19 +320,19 @@ def main():
         # update the images
         if action == "update":
             coordinates = type_coordinates.get(type, overworld_coordinates)
-            update_image(resolution, coordinates, type)
+            update_image(coordinates, type)
 
         # generate blank images
         elif action == "init":
             if zoom_level is not None:
-                generate_image(resolution, type, zoom_level)
+                generate_image(type, zoom_level)
             else:
-                generate_image(resolution, type)
+                generate_image(type)
         else:
             print("invalid action")
     else:
-        print("usage: python realtimeChunkImage.py init [<type=OVERWORLD|nether|end> <zoom_level=1>]")
-        print("usage: python realtimeChunkImage.py update [<type=OVERWORLD|nether|end>]\n")
+        print("usage: python realtimeChunkImage.py init [<type=OVERWORLD | nether | end> <zoom_level=1>]")
+        print("usage: python realtimeChunkImage.py update [<type=OVERWORLD | nether | end>]\n")
         print("usage: python realtimeChunkImage.py realtime\n")
         print("\tinit: generate blank images")
         print("\tupdate: update the existing images")
