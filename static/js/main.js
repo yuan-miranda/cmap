@@ -1,15 +1,20 @@
-const resolution = 32768;
-const tileSize = 8192;
+const RESOLUTION = 32768;
+// const MAX_CHUNK_SIZE = 8192;
+const MAX_CHUNK_SIZE = 256;
+
 const center = {
-    centerX: resolution / 2,
-    centerY: -resolution / 2
+    centerX: RESOLUTION / 2,
+    centerY: -RESOLUTION / 2
 }
-// change based on how many zoom levels you have in i.e. tiles/type=overworld folder.
+
+// zoom level are the numerical folder inside /tiles
+// i.e. /tiles/0, /tiles/1
 const zoom = {
     min: 0,
     max: 0
 }
 let map;
+let tileLayer;
 
 function getMap() {
     // create the map
@@ -17,19 +22,29 @@ function getMap() {
         crs: L.CRS.Simple,
         minZoom: zoom.min,
         maxZoom: zoom.max,
-        maxBounds: [[0, resolution], [-resolution, 0]],
+        maxBounds: [[0, RESOLUTION], [-RESOLUTION, 0]],
         maxBoundsViscosity: 0.7
     }).setView([center.centerY, center.centerX], 0);
     return map;
 }
 
 function addTileLayer(map, tilesUrl) {
-    // add the tiles to the map
-    L.tileLayer(tilesUrl, {
-        tileSize: tileSize,
-        noWrap: true
+    if (tileLayer) {
+        map.removeLayer(tileLayer);
+    }
+
+    tileLayer = L.tileLayer(tilesUrl, {
+        MAX_CHUNK_SIZE: MAX_CHUNK_SIZE,
+        noWrap: true,
     }).addTo(map);
 }
+// function addTileLayer(map, tilesUrl) {
+//     // add the tiles to the map
+//     L.tileLayer(tilesUrl, {
+//         MAX_CHUNK_SIZE: MAX_CHUNK_SIZE,
+//         noWrap: true
+//     }).addTo(map);
+// }
 
 function displayCoordinates(map) {
     // map.on('click', function(e) {
@@ -58,44 +73,52 @@ function addMarker(map, y, x, text='') {
     marker.bindPopup(text ? text : `${x}, ${y}`);
 }
 
-function selectTypeListener() {
+function dimensionTypeListener() {
     const select = document.getElementById('type');
     select.addEventListener('change', function() {
         if (map) map.remove();
-        localStorage.setItem('selectedType', select.value);
+        localStorage.setItem('dimensionType', select.value);
 
-        const type = select.value;
-        const tilesUrl = `/tiles/${type}/{z}/{x}/{y}.png`;
+        const tilesUrl = `/tiles/${select.value}/{z}/{x}/{y}.png`;
         const newMap = getMap();
+
         addTileLayer(newMap, tilesUrl);
         displayCoordinates(newMap);
+
         // marks the center of the map
         addMarker(newMap, center.centerY, center.centerX, "0, 0");
     });
 
-    const selectedType = localStorage.getItem('selectedType');
-    if (selectedType) select.value = selectedType;
+    const dimensionType = localStorage.getItem('dimensionType');
+    if (dimensionType) select.value = dimensionType;
 
     select.dispatchEvent(new Event('change'));
 }
 
 function updateTiles() {
-    const currentCenter = map.getCenter();
-    const currentZoom = map.getZoom();
     const timestamp = new Date().getTime();
     const newTilesUrl = `/tiles/${document.getElementById('type').value}/{z}/{x}/{y}.png?${timestamp}`;
-
-    // remove all the current tiles
-    map.eachLayer((layer) => {
-        if (layer instanceof L.TileLayer) map.removeLayer(layer);
-    });
-
-    // add new tiles to the map
-    addTileLayer(map, newTilesUrl);
-    map.setView(currentCenter, currentZoom);
+    
+    // update the tile layer URL
+    if (tileLayer) tileLayer.setUrl(newTilesUrl);
 }
+// function updateTiles() {
+//     const currentCenter = map.getCenter();
+//     const currentZoom = map.getZoom();
+//     const timestamp = new Date().getTime();
+//     const newTilesUrl = `/tiles/${document.getElementById('type').value}/{z}/{x}/{y}.png?${timestamp}`;
+
+//     // remove all the current tiles
+//     map.eachLayer((layer) => {
+//         if (layer instanceof L.TileLayer) map.removeLayer(layer);
+//     });
+
+//     // add new tiles to the map
+//     addTileLayer(map, newTilesUrl);
+//     map.setView(currentCenter, currentZoom);
+// }
 
 document.addEventListener('DOMContentLoaded', () => {
-    selectTypeListener();
+    dimensionTypeListener();
     setInterval(updateTiles, 10000);
 });
