@@ -1,6 +1,5 @@
-// "node_modules/leaflet/src/layer/tile/TileLayer.js"
 
-const RESOLUTION = 32768 / 4;
+const RESOLUTION = 32768;
 const MAX_CHUNK_SIZE = 256;
 // const MAX_CHUNK_SIZE = 8192;
 
