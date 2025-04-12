@@ -146,7 +146,7 @@ function updateTilesInterval() {
 }
 
 function startUpdateTileInterval() {
-    intervalId = setInterval(updateTilesInterval, 5000);
+    intervalId = setInterval(updateTilesInterval, 3000);
 }
 
 function stopUpdateTileInterval() {

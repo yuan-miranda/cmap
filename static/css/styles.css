@@ -14,16 +14,19 @@
     margin: 20px;
     font-size: 1rem;
     font-weight: bold;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     z-index: 1000;
 }
-.coordinateDisplay #type {
+.coordinateDisplay #dimensionType {
     font-size: 1rem;
     font-weight: bold;
     margin-right: 10px;
     background-color: transparent;
     border: none;
 }
-.coordinateDisplay #type option {
+.coordinateDisplay #dimensionType option {
     font-weight: normal;
+}
+
+.coordinateDisplay #dimensionType:focus {
+    outline: none;
 }
