@@ -1,6 +1,8 @@
-const RESOLUTION = 32768;
-// const MAX_CHUNK_SIZE = 8192;
+// "node_modules/leaflet/src/layer/tile/TileLayer.js"
+
+const RESOLUTION = 32768 / 4;
 const MAX_CHUNK_SIZE = 256;
+// const MAX_CHUNK_SIZE = 8192;
 
 const center = {
     centerX: RESOLUTION / 2,
@@ -15,6 +17,59 @@ const zoom = {
 }
 let map;
 let tileLayer;
+let worldName = 'world';
+let intervalId;
+const mtimeMsCache = {};
+
+async function getMTimeMs(tileUrl) {
+    // Array(7) [ "", "tiles", "world", "overworld", "0", "30", "17.png" ]
+    const key = tileUrl.split('/').slice(2, 7).join('/');
+    const response = await fetch(`/tiles-mtimeMs/${key}`);
+    if (response.status === 200) {
+        const mtimeMs = await response.text();
+        mtimeMsCache[key] = mtimeMs;
+        return mtimeMs;
+    }
+
+}
+
+const SmartTileLayer = L.TileLayer.extend({
+    createTile: function (coords, done) {
+        var tile = document.createElement('img');
+
+        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+        L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+
+        if (this.options.crossOrigin || this.options.crossOrigin === '') {
+            tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+        }
+
+        // for this new option we follow the documented behavior
+        // more closely by only setting the property when string
+        if (typeof this.options.referrerPolicy === 'string') {
+            tile.referrerPolicy = this.options.referrerPolicy;
+        }
+
+        // The alt attribute is set to the empty string,
+        // allowing screen readers to ignore the decorative image tiles.
+        // https://www.w3.org/WAI/tutorials/images/decorative/
+        // https://www.w3.org/TR/html-aria/#el-img-empty-alt
+        tile.alt = '';
+
+        (async () => {
+            const tileUrl = this.getTileUrl(coords);
+            const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
+            if (mtimeMs) {
+                tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+            }
+            else {
+                tile.src = tileUrl;
+            }
+        })();
+
+        return tile;
+    },
+});
 
 function getMap() {
     // create the map
@@ -29,22 +84,13 @@ function getMap() {
 }
 
 function addTileLayer(map, tilesUrl) {
-    if (tileLayer) {
-        map.removeLayer(tileLayer);
-    }
+    if (tileLayer) map.removeLayer(tileLayer);
 
-    tileLayer = L.tileLayer(tilesUrl, {
+    tileLayer = new SmartTileLayer(tilesUrl, {
         MAX_CHUNK_SIZE: MAX_CHUNK_SIZE,
         noWrap: true,
     }).addTo(map);
 }
-// function addTileLayer(map, tilesUrl) {
-//     // add the tiles to the map
-//     L.tileLayer(tilesUrl, {
-//         MAX_CHUNK_SIZE: MAX_CHUNK_SIZE,
-//         noWrap: true
-//     }).addTo(map);
-// }
 
 function displayCoordinates(map) {
     // map.on('click', function(e) {
@@ -57,7 +103,7 @@ function displayCoordinates(map) {
     //     console.log(`X: ${offsetX}, Y: ${offsetY}`);
     // });
 
-    map.on('mousemove', function(e) {
+    map.on('mousemove', function (e) {
         const latlng = e.latlng;
         const x = Math.floor(latlng.lng);
         const y = Math.floor(latlng.lat);
@@ -68,18 +114,18 @@ function displayCoordinates(map) {
     });
 }
 
-function addMarker(map, y, x, text='') {
+function addMarker(map, y, x, text = '') {
     const marker = L.marker([y, x]).addTo(map);
     marker.bindPopup(text ? text : `${x}, ${y}`);
 }
 
 function dimensionTypeListener() {
-    const select = document.getElementById('type');
-    select.addEventListener('change', function() {
+    const select = document.getElementById('dimensionType');
+    select.addEventListener('change', function () {
         if (map) map.remove();
         localStorage.setItem('dimensionType', select.value);
 
-        const tilesUrl = `/tiles/${select.value}/{z}/{x}/{y}.png`;
+        const tilesUrl = `/tiles/${worldName}/${select.value}/{z}/{x}/{y}.png`;
         const newMap = getMap();
 
         addTileLayer(newMap, tilesUrl);
@@ -95,30 +141,47 @@ function dimensionTypeListener() {
     select.dispatchEvent(new Event('change'));
 }
 
-function updateTiles() {
-    const timestamp = new Date().getTime();
-    const newTilesUrl = `/tiles/${document.getElementById('type').value}/{z}/{x}/{y}.png?${timestamp}`;
-    
-    // update the tile layer URL
-    if (tileLayer) tileLayer.setUrl(newTilesUrl);
+function updateTilesInterval() {
+    if (tileLayer) tileLayer.redraw();
 }
-// function updateTiles() {
-//     const currentCenter = map.getCenter();
-//     const currentZoom = map.getZoom();
-//     const timestamp = new Date().getTime();
-//     const newTilesUrl = `/tiles/${document.getElementById('type').value}/{z}/{x}/{y}.png?${timestamp}`;
 
-//     // remove all the current tiles
-//     map.eachLayer((layer) => {
-//         if (layer instanceof L.TileLayer) map.removeLayer(layer);
-//     });
+function startUpdateTileInterval() {
+    intervalId = setInterval(updateTilesInterval, 5000);
+}
 
-//     // add new tiles to the map
-//     addTileLayer(map, newTilesUrl);
-//     map.setView(currentCenter, currentZoom);
-// }
+function stopUpdateTileInterval() {
+    clearInterval(intervalId);
+}
+
+function handlePanning() {
+    stopUpdateTileInterval();
+}
+
+function handlePanEnd() {
+    startUpdateTileInterval();
+}
+
+function eventListener() {
+    // when left mouse is down and is inside the map
+    const mapContainer = document.getElementById('map');
+    mapContainer.addEventListener('mousedown', function (e) {
+        if (e.button === 0) {
+            mapContainer.style.cursor = 'grabbing';
+            handlePanning();
+        }
+    });
+
+    mapContainer.addEventListener('mouseup', function (e) {
+        if (e.button === 0) {
+            mapContainer.style.cursor = 'grab';
+            handlePanEnd();
+        }
+    });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
+    eventListener();
     dimensionTypeListener();
-    setInterval(updateTiles, 10000);
+    startUpdateTileInterval();
 });

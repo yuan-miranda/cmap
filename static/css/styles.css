@@ -1,4 +1,7 @@
-#map { height: 100vh; }
+#map { 
+    height: 100vh;
+    /* background-color: white; */
+ }
 /* fixed position bottom left */
 .coordinateDisplay {
     display: flex;
