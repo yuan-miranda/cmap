@@ -5,15 +5,22 @@ import sys
 import os
 import psycopg2
 import argparse
+from dotenv import load_dotenv
 
 # north is down
 # east is right
 
-DB_HOST = ""
-DB_PORT = 5432
-DB_NAME = ""
-DB_USER = ""
-DB_PASSWORD = ""
+load_dotenv()
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+if DB_HOST is None or DB_PORT is None or DB_NAME is None or DB_USER is None or DB_PASSWORD is None:
+    print(
+        "DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD must be set in .env file or environment variables"
+    )
+    sys.exit(1)
 
 RESOLUTION = 32768
 MAX_CHUNK_SIZE = 256
@@ -138,14 +145,14 @@ def get_coordinates_db(dimension="overworld"):
 
     try:
         with conn.cursor() as cursor, open(dimension_path, "a") as file:
-            query = f"SELECT username, x, z FROM {dimension}"
+            query = f"SELECT x, z FROM {dimension}"
             cursor.execute(query)
             rows = cursor.fetchall()
 
             for row in rows:
-                username, x, z = row
+                x, z = row
                 coordinates.append((round(x), round(z)))
-                file.write(f"{username}, {x}, {z}\n")
+                file.write(f"{x}, {z}\n")
 
             file.flush()
             query = f"TRUNCATE TABLE {dimension}"
@@ -173,10 +180,8 @@ def get_coordinates(dimension="overworld"):
             if file.readline() is None:
                 return np.array(coordinates)
             for line in file:
-                username, x, z = map(str.strip, line.split(","))
-                x = round(float(x))
-                z = round(float(z))
-                coordinates.append((x, z))
+                x, z = map(str.strip, line.split(","))
+                coordinates.append((round(x), round(z)))
                 file.flush()
 
     except Exception as e:
