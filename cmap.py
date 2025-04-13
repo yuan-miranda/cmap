@@ -27,6 +27,8 @@ MAX_CHUNK_SIZE = 256
 # MAX_CHUNK_SIZE = 8192
 
 WORLD_NAME = "world"
+
+WORLD_DIR = None
 OVERWORLD_PATH = None
 NETHER_PATH = None
 END_PATH = None
@@ -40,7 +42,7 @@ def generate_image(dimension="overworld", zoom_levels=1):
     dimension_tiles_path = {
         "overworld": OVERWORLD_TILES_PATH,
         "nether": NETHER_TILES_PATH,
-        "end": END_TILES_PATH,
+        "the_end": END_TILES_PATH,
     }.get(dimension, OVERWORLD_TILES_PATH)
     os.makedirs(dimension_tiles_path, exist_ok=True)
 
@@ -65,7 +67,7 @@ def update_image(coordinates, dimension="overworld"):
     dimension_tiles_path = {
         "overworld": OVERWORLD_TILES_PATH,
         "nether": NETHER_TILES_PATH,
-        "end": END_TILES_PATH,
+        "the_end": END_TILES_PATH,
     }.get(dimension, OVERWORLD_TILES_PATH)
     os.makedirs(dimension_tiles_path, exist_ok=True)
 
@@ -135,9 +137,9 @@ def get_coordinates_db(dimension="overworld"):
     dimension_path = {
         "overworld": OVERWORLD_PATH,
         "nether": NETHER_PATH,
-        "end": END_PATH,
+        "the_end": END_PATH,
     }.get(dimension, OVERWORLD_PATH)
-    os.makedirs(dimension_path, exist_ok=True)
+    os.makedirs(os.path.dirname(dimension_path), exist_ok=True)
 
     conn = connect_db()
     if conn is None:
@@ -171,9 +173,9 @@ def get_coordinates(dimension="overworld"):
     dimension_path = {
         "overworld": OVERWORLD_PATH,
         "nether": NETHER_PATH,
-        "end": END_PATH,
+        "the_end": END_PATH,
     }.get(dimension, OVERWORLD_PATH)
-    os.makedirs(dimension_path, exist_ok=True)
+    os.makedirs(os.path.dirname(dimension_path), exist_ok=True)
 
     try:
         with open(dimension_path, "r") as file:
@@ -224,7 +226,7 @@ def main():
     parser.add_argument(
         "pos_dimension",
         nargs="?",
-        choices=["overworld", "nether", "end", "all"],
+        choices=["overworld", "nether", "the_end", "all"],
     )
     parser.add_argument(
         "pos_zoom_level",
@@ -250,7 +252,7 @@ def main():
     )
     parser.add_argument(
         "--dimension",
-        choices=["overworld", "nether", "end", "all"],
+        choices=["overworld", "nether", "the_end", "all"],
         help="Dimension to generate/update the image for (default: overworld)",
     )
     parser.add_argument(
@@ -269,9 +271,11 @@ def main():
     mode_arg = args.mode or args.pos_mode or "init"
     WORLD_NAME = args.world or args.pos_world or WORLD_NAME
 
-    OVERWORLD_PATH = f"worlds/{WORLD_NAME}/overworld.txt"
-    NETHER_PATH = f"worlds/{WORLD_NAME}/nether.txt"
-    END_PATH = f"worlds/{WORLD_NAME}/end.txt"
+    WORLD_DIR = f"worlds/{WORLD_NAME}"
+    
+    OVERWORLD_PATH = f"{WORLD_DIR}/overworld.txt"
+    NETHER_PATH = f"{WORLD_DIR}/nether.txt"
+    END_PATH = f"{WORLD_DIR}/end.txt"
 
     OVERWORLD_TILES_PATH = f"tiles/{WORLD_NAME}/overworld"
     NETHER_TILES_PATH = f"tiles/{WORLD_NAME}/nether"
@@ -304,13 +308,13 @@ def main():
                 start_get = time.time()
                 overworld_coordinates = get_coordinates_db("overworld")
                 nether_coordinates = get_coordinates_db("nether")
-                end_coordinates = get_coordinates_db("end")
+                end_coordinates = get_coordinates_db("the_end")
                 end_get = time.time()
 
                 dimension_coordinates = {
                     "overworld": overworld_coordinates,
                     "nether": nether_coordinates,
-                    "end": end_coordinates,
+                    "the_end": end_coordinates,
                 }
 
                 start_update = time.time()
@@ -333,7 +337,7 @@ def main():
 
     elif mode_arg == "update":
         if dimension_arg == "all":
-            for dimension in ["overworld", "nether", "end"]:
+            for dimension in ["overworld", "nether", "the_end"]:
                 coordinates = get_coordinates_db(dimension)
                 update_image(coordinates, dimension)
         else:
@@ -342,7 +346,7 @@ def main():
 
     elif mode_arg == "init":
         if dimension_arg == "all":
-            for dimension in ["overworld", "nether", "end"]:
+            for dimension in ["overworld", "nether", "the_end"]:
                 generate_image(dimension, zoom_level)
         else:
             generate_image(dimension_arg, zoom_level)
