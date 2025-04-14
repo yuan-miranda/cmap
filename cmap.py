@@ -95,6 +95,7 @@ def update_image(coordinates, dimension="overworld"):
                         f"{dimension_tiles_path}/{zoom_level}/{x_level}/{y_level}.png"
                     )
                     tile_image = Image.open(tile)
+                    isUpdated = False
 
                     for x, z in coordinates:
                         row = (x + center_offset) // chunk_size
@@ -110,8 +111,10 @@ def update_image(coordinates, dimension="overworld"):
                         # check if the pixel is within the chunk bounds
                         if 0 <= pixel_x < chunk_size and 0 <= pixel_z < chunk_size:
                             tile_image.putpixel((pixel_x, pixel_z), 0)
+                            isUpdated = True
 
-                    tile_image.save(tile)
+                    if isUpdated:
+                        tile_image.save(tile)
                     tile_image.close()
     except Exception as e:
         raise e
