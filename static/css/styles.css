@@ -23,6 +23,14 @@
     font-weight: bold;
     z-index: 1000;
 }
+.urls {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    margin: 20px;
+    z-index: 1000;
+}
 .coordinateDisplay #dimensionType {
     font-size: 1rem;
     font-weight: bold;
