@@ -134,10 +134,6 @@ function dimensionTypeListener() {
     select.dispatchEvent(new Event('change'));
 }
 
-function updateTilesInterval() {
-    if (tileLayer) tileLayer.redraw();
-}
-
 async function smartUpdateTiles() {
     if (!tileLayer || !tileLayer._tiles) return;
 
@@ -172,8 +168,8 @@ async function smartUpdateTiles() {
     }
 }
 
-function startUpdateTileInterval(delay = 10000) {
-    intervalId = setInterval(() => smartUpdateTiles(), delay);
+function startUpdateTileInterval() {
+    intervalId = setInterval(() => smartUpdateTiles(), 10000);
 }
 
 function stopUpdateTileInterval() {
@@ -185,7 +181,7 @@ function handlePanning() {
 }
 
 function handlePanEnd() {
-    startUpdateTileInterval(1000);
+    startUpdateTileInterval();
 }
 
 function eventListener() {
