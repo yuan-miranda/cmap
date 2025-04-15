@@ -164,7 +164,8 @@ async function smartUpdateTiles() {
 
             if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
                 setMtimeMsCache(tileUrl, newMtimeMs);
-                tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
+                const newSrc = `${tileUrl}?mtimeMs=${newMtimeMs}`;
+                if (tile.src !== newSrc) tile.src = newSrc;
             }
         }
     }
