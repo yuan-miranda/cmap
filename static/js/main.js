@@ -152,19 +152,24 @@ async function smartUpdateTiles() {
         return ca.x - cb.x;
     });
 
-    for (const key of sortedKeys) {
-        const tileObj = tiles[key];
-        const coords = tileObj.coords;
-        const tile = tileObj.el;
+    try {
+        for (const key of sortedKeys) {
+            const tileObj = tiles[key];
+            const coords = tileObj.coords;
+            const tile = tileObj.el;
 
-        const tileUrl = tileLayer.getTileUrl(coords);
-        const oldMtimeMs = mtimeMsCache[tileUrl];
-        const newMtimeMs = await getMTimeMs(tileUrl);
+            const tileUrl = tileLayer.getTileUrl(coords);
+            const oldMtimeMs = mtimeMsCache[tileUrl];
+            const newMtimeMs = await getMTimeMs(tileUrl);
 
-        if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
-            setMtimeMsCache(tileUrl, newMtimeMs);
-            tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
+            if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
+                setMtimeMsCache(tileUrl, newMtimeMs);
+                tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
+            }
         }
+    }
+    catch (error) {
+        console.error('Error fetching tile mtimeMs:', error);
     }
 }
 
