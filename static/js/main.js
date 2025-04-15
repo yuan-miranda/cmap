@@ -172,8 +172,8 @@ async function smartUpdateTiles() {
     }
 }
 
-function startUpdateTileInterval() {
-    intervalId = setInterval(() => smartUpdateTiles(), 10000);
+function startUpdateTileInterval(delay = 10000) {
+    intervalId = setInterval(() => smartUpdateTiles(), delay);
 }
 
 function stopUpdateTileInterval() {
@@ -181,11 +181,11 @@ function stopUpdateTileInterval() {
 }
 
 function handlePanning() {
-    stopUpdateTileInterval();
+    stopUpdateTileInterval(1000);
 }
 
 function handlePanEnd() {
-    startUpdateTileInterval();
+    startUpdateTileInterval(1000);
 }
 
 function eventListener() {
