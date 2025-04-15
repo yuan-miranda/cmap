@@ -18,6 +18,7 @@ let map;
 let tileLayer;
 let worldName = 'world';
 let intervalId;
+let isUpdatingTiles = false;
 let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
 
 function setMtimeMsCache(key, value) {
@@ -135,7 +136,8 @@ function dimensionTypeListener() {
 }
 
 async function smartUpdateTiles() {
-    if (!tileLayer || !tileLayer._tiles) return;
+    if (!tileLayer || !tileLayer._tiles || isUpdatingTiles) return;
+    isUpdatingTiles = true;
 
     const tiles = tileLayer._tiles;
     const sortedKeys = Object.keys(tiles).sort((a, b) => {
@@ -165,6 +167,9 @@ async function smartUpdateTiles() {
         }
     }
     catch (error) {
+    }
+    finally {
+        isUpdatingTiles = false;
     }
 }
 
