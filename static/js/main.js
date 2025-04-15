@@ -164,8 +164,7 @@ async function smartUpdateTiles() {
 
             if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
                 setMtimeMsCache(tileUrl, newMtimeMs);
-                const newSrc = `${tileUrl}?mtimeMs=${newMtimeMs}`;
-                if (tile.src !== newSrc) tile.src = newSrc;
+                tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
             }
         }
     }
@@ -182,7 +181,7 @@ function stopUpdateTileInterval() {
 }
 
 function handlePanning() {
-    stopUpdateTileInterval(1000);
+    stopUpdateTileInterval();
 }
 
 function handlePanEnd() {
