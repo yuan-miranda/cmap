@@ -173,7 +173,7 @@ async function smartUpdateTiles() {
 }
 
 function startUpdateTileInterval() {
-    intervalId = setInterval(() => smartUpdateTiles(), 5000);
+    intervalId = setInterval(() => smartUpdateTiles(), 10000);
 }
 
 function stopUpdateTileInterval() {
