@@ -169,12 +169,11 @@ async function smartUpdateTiles() {
         }
     }
     catch (error) {
-        console.error('Error fetching tile mtimeMs:', error);
     }
 }
 
 function startUpdateTileInterval() {
-    intervalId = setInterval(() => smartUpdateTiles(), 1000);
+    intervalId = setInterval(() => smartUpdateTiles(), 3000);
 }
 
 function stopUpdateTileInterval() {
