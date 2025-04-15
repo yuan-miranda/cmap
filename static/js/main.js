@@ -137,6 +137,7 @@ function dimensionTypeListener() {
 
 async function smartUpdateTiles() {
     if (!tileLayer || !tileLayer._tiles || isUpdatingTiles) return;
+    console.log('smartUpdateTiles called ' + isUpdatingTiles);
     isUpdatingTiles = true;
 
     const tiles = tileLayer._tiles;
