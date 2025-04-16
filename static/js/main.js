@@ -208,7 +208,7 @@ async function updatePlayerMarkers() {
 
     try {
         const response = await fetch(`/players-coordinates?world=${worldName}&dimension=${dimensionType}`);
-        if (!response.ok) return alert('Error fetching player coordinates');
+        if (!response.ok) return console.error('Error fetching player coordinates');
 
         const data = await response.json();
         
