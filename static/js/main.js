@@ -45,9 +45,9 @@ async function handleDownload() {
 }
 
 function getTileCoordinates(mapX, mapY, zoomlevel) {
-    const scale = 1 << zoomlevel;
-    const tileX = Math.floor((mapX / RESOLUTION) * scale);
-    const tileY = Math.floor((mapY / RESOLUTION) * scale);
+    const tileX = Math.floor(mapX / MAX_CHUNK_SIZE);
+    const tileY = -Math.floor(mapY / MAX_CHUNK_SIZE);
+    console.log(`Tile coordinates: x=${tileX}, y=${tileY}, zoom=${zoomlevel}`);
     return { x: tileX, y: tileY, z: zoomlevel };
 }
 
@@ -165,44 +165,6 @@ function dimensionTypeListener() {
     select.dispatchEvent(new Event('change'));
 }
 
-// async function smartUpdateTiles() {
-//     if (!tileLayer || !tileLayer._tiles || updatingTilesCount >= MAX_CONCURRENT_UPDATES) return;
-//     updatingTilesCount++;
-
-//     const tiles = tileLayer._tiles;
-//     const sortedKeys = Object.keys(tiles).sort((a, b) => {
-//         const ca = tiles[a].coords;
-//         const cb = tiles[b].coords;
-
-//         // sort by z, then y, then x
-//         if (ca.z !== cb.z) return ca.z - cb.z;
-//         if (ca.y !== cb.y) return ca.y - cb.y;
-//         return ca.x - cb.x;
-//     });
-
-//     try {
-//         for (const key of sortedKeys) {
-//             const tileObj = tiles[key];
-//             const coords = tileObj.coords;
-//             const tile = tileObj.el;
-
-//             const tileUrl = tileLayer.getTileUrl(coords);
-//             const oldMtimeMs = mtimeMsCache[tileUrl];
-//             const newMtimeMs = await getMTimeMs(tileUrl);
-
-//             if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
-//                 setMtimeMsCache(tileUrl, newMtimeMs);
-//                 tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
-//             }
-//         }
-//     }
-//     catch (error) {
-//     }
-//     finally {
-//         updatingTilesCount--;
-//     }
-// }
-
 async function updatePlayerMarkers() {
     const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
 
@@ -218,7 +180,7 @@ async function updatePlayerMarkers() {
             const { player_name, x, z } = player;
             const mapX = x + center.centerX;
             const mapY = -z + center.centerY;
-            
+
             const playerMarker = playerMarkers[player_name];
             if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
             else {
