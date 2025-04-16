@@ -155,6 +155,10 @@ function dimensionTypeListener() {
     const select = document.getElementById('dimensionType');
     select.addEventListener('change', function () {
         if (map) map.remove();
+
+        Object.values(playerMarkers).forEach(marker => map && map.removeLayer(marker));
+        Object.keys(playerMarkers).forEach(key => delete playerMarkers[key]);
+
         localStorage.setItem('dimensionType', select.value);
 
         const tilesUrl = `/tiles/${worldName}/${select.value}/{z}/{x}/{y}.png`;
