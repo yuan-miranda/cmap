@@ -21,6 +21,26 @@ let intervalId;
 let isUpdatingTiles = false;
 let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
 
+async function handleDownload() {
+    const world = localStorage.getItem('worldName') || worldName;
+    const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
+
+    try {
+        const response = await fetch(`/download-coordinates-log?world=${world}&dimension=${dimensionType}`);
+        if (!response.ok) return alert('Error downloading file');
+    
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${world}-${dimensionType}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
 function setMtimeMsCache(key, value) {
     mtimeMsCache[key] = value;
     localStorage.setItem('mtimeMsCache', JSON.stringify(mtimeMsCache));
@@ -191,6 +211,7 @@ function handlePanEnd() {
 
 function eventListener() {
     const mapContainer = document.getElementById('map');
+    const downloadButton = document.getElementById('downloadFileButton');
     mapContainer.addEventListener('mousedown', function (e) {
         if (e.button === 0) {
             mapContainer.style.cursor = 'grabbing';
@@ -204,6 +225,9 @@ function eventListener() {
             handlePanEnd();
         }
     });
+
+    downloadButton.addEventListener('click', handleDownload);
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {

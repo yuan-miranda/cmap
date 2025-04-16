@@ -8,6 +8,7 @@ const port = 3000;
 app.use(express.static(path.join(__dirname, 'static')));
 app.use("/node_modules", express.static(path.join(__dirname, 'node_modules')));
 app.use("/images", express.static(path.join(__dirname, 'images')));
+app.use("/worlds", express.static(path.join(__dirname, 'worlds')));
 
 app.get('/', (req, res) => {
     res.sendFile("static/html/index.html", { root: __dirname });
@@ -40,6 +41,18 @@ app.get("/tiles-mtimeMs/:world/:dimension/:z/:x/:y.png", (req, res) => {
     });
 });
 
+app.get("/download-coordinates-log", (req, res) => {
+    const { world, dimension } = req.query;
+
+    try {
+        const filePath = path.join(__dirname, 'worlds', world, `${dimension}.txt`);
+        if (!fs.existsSync(filePath)) return res.status(404).send('File not found');
+
+        res.download(filePath);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
 
 app.listen(port, () => {
     console.log(`app listening at http://localhost:${port}`);
