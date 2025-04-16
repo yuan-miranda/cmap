@@ -81,9 +81,13 @@ const SmartTileLayer = L.TileLayer.extend({
         // adds mtimeMs to the tile url
         (async () => {
             const tileUrl = this.getTileUrl(coords);
-            const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
-            if (mtimeMs) tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-            else tile.src = tileUrl;
+            let mtimeMs = mtimeMsCache[tileUrl];
+
+            if (!mtimeMs) {
+                mtimeMs = await getMTimeMs(tileUrl);
+                if (mtimeMs) setMtimeMsCache(tileUrl, mtimeMs);
+            }
+            tile.src = mtimeMs ? `${tileUrl}?mtimeMs=${mtimeMs}` : tileUrl;
         })();
         return tile;
     },
