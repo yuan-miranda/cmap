@@ -21,6 +21,9 @@ let intervalId;
 let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
 const playerMarkers = {};
 
+let updatingTilesCount = 0;
+const MAX_CONCURRENT_UPDATES = 1;
+
 async function handleDownload() {
     const world = localStorage.getItem('worldName') || worldName;
     const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
@@ -39,12 +42,6 @@ async function handleDownload() {
     } catch (error) {
         console.error('Error:', error);
     }
-}
-
-function getTileCoordinates(mapX, mapY, zoomlevel) {
-    const tileX = Math.floor(mapX / MAX_CHUNK_SIZE);
-    const tileY = -Math.floor(mapY / MAX_CHUNK_SIZE) - 1;
-    return { x: tileX, y: tileY, z: zoomlevel };
 }
 
 function setMtimeMsCache(key, value) {
@@ -81,13 +78,9 @@ const SmartTileLayer = L.TileLayer.extend({
         // adds mtimeMs to the tile url
         (async () => {
             const tileUrl = this.getTileUrl(coords);
-            let mtimeMs = mtimeMsCache[tileUrl];
-
-            if (!mtimeMs) {
-                mtimeMs = await getMTimeMs(tileUrl);
-                if (mtimeMs) setMtimeMsCache(tileUrl, mtimeMs);
-            }
-            tile.src = mtimeMs ? `${tileUrl}?mtimeMs=${mtimeMs}` : tileUrl;
+            const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
+            if (mtimeMs) tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+            else tile.src = tileUrl;
         })();
         return tile;
     },
@@ -127,13 +120,6 @@ function displayCoordinates(map) {
     //     console.log(`X: ${offsetX}, Y: ${offsetY}`);
     // });
 
-    map.on('click', function(e) {
-        const latlng = e.latlng;
-        const x = Math.floor(latlng.lng);
-        const y = Math.floor(latlng.lat);
-        alert(`X: ${Math.floor(x / MAX_CHUNK_SIZE)}, Y: ${Math.floor(-y / MAX_CHUNK_SIZE)}`);
-    });
-
     map.on('mousemove', function (e) {
         const latlng = e.latlng;
         const x = Math.floor(latlng.lng);
@@ -172,22 +158,57 @@ function dimensionTypeListener() {
     select.dispatchEvent(new Event('change'));
 }
 
+async function smartUpdateTiles() {
+    if (!tileLayer || !tileLayer._tiles || updatingTilesCount >= MAX_CONCURRENT_UPDATES) return;
+    updatingTilesCount++;
+
+    const tiles = tileLayer._tiles;
+    const sortedKeys = Object.keys(tiles).sort((a, b) => {
+        const ca = tiles[a].coords;
+        const cb = tiles[b].coords;
+
+        // sort by z, then y, then x
+        if (ca.z !== cb.z) return ca.z - cb.z;
+        if (ca.y !== cb.y) return ca.y - cb.y;
+        return ca.x - cb.x;
+    });
+
+    try {
+        for (const key of sortedKeys) {
+            const tileObj = tiles[key];
+            const coords = tileObj.coords;
+            const tile = tileObj.el;
+
+            const tileUrl = tileLayer.getTileUrl(coords);
+            const oldMtimeMs = mtimeMsCache[tileUrl];
+            const newMtimeMs = await getMTimeMs(tileUrl);
+
+            if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
+                setMtimeMsCache(tileUrl, newMtimeMs);
+                tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
+            }
+        }
+    }
+    catch (error) {
+    }
+    finally {
+        updatingTilesCount--;
+    }
+}
+
 async function updatePlayerMarkers() {
     const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
 
     try {
         const response = await fetch(`/players-coordinates?world=${worldName}&dimension=${dimensionType}`);
-        if (!response.ok) return console.error('Error fetching player coordinates');
+        if (!response.ok) return alert('Error fetching player coordinates');
 
         const data = await response.json();
-        
-        const zoomlevel = map.getZoom();
-
         for (const player of data) {
             const { player_name, x, z } = player;
             const mapX = x + center.centerX;
             const mapY = -z + center.centerY;
-
+            
             const playerMarker = playerMarkers[player_name];
             if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
             else {
@@ -195,22 +216,13 @@ async function updatePlayerMarkers() {
                 marker.bindPopup(`${player_name}<br>x: ${x}, z: ${z}`);
                 playerMarkers[player_name] = marker;
             }
+        }
 
-            // determine the tile this marker is in
-            const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
-            const tileUrl = tileLayer.getTileUrl(tileCoords);
-            const oldMtimeMs = mtimeMsCache[tileUrl];
-            const mtimeMs = await getMTimeMs(tileUrl);
-
-            const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
-            const tileObj = tileLayer._tiles[tileKey];
-
-            if (tileObj && tileObj.el) {
-                const tile = tileObj.el;
-                if (mtimeMs && mtimeMs !== oldMtimeMs) {
-                    setMtimeMsCache(tileUrl, mtimeMs);
-                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-                }
+        // remove markers that are not in the data anymore
+        for (const playerName in playerMarkers) {
+            if (!data.find(player => player.player_name === playerName)) {
+                map.removeLayer(playerMarkers[playerName]);
+                delete playerMarkers[playerName];
             }
         }
     } catch (error) {
@@ -220,6 +232,7 @@ async function updatePlayerMarkers() {
 
 function startUpdateTileInterval() {
     intervalId = setInterval(() => {
+        smartUpdateTiles();
         updatePlayerMarkers();
     }, 1000);
 }
