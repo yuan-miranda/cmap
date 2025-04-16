@@ -197,16 +197,16 @@ async function updatePlayerMarkers() {
             const tileUrl = tileLayer.getTileUrl(tileCoords);
             const oldMtimeMs = mtimeMsCache[tileUrl];
             const mtimeMs = await getMTimeMs(tileUrl);
-            console.log(oldMtimeMs, mtimeMs, tileUrl);
 
             const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
             const tileObj = tileLayer._tiles[tileKey];
 
             if (tileObj && tileObj.el) {
                 const tile = tileObj.el;
-                const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
-                if (mtimeMs) tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-                else tile.src = tileUrl;
+                if (mtimeMs && mtimeMs !== oldMtimeMs) {
+                    setMtimeMsCache(tileUrl, mtimeMs);
+                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+                }
             }
         }
     } catch (error) {
