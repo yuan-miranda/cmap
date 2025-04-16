@@ -127,12 +127,13 @@ function displayCoordinates(map) {
     //     console.log(`X: ${offsetX}, Y: ${offsetY}`);
     // });
 
-    map.on('click', function(e) {
-        const latlng = e.latlng;
-        const x = Math.floor(latlng.lng);
-        const y = Math.floor(latlng.lat);
-        alert(`X: ${Math.floor(x / MAX_CHUNK_SIZE)}, Y: ${Math.floor(-y / MAX_CHUNK_SIZE)}`);
-    });
+    // display the tile of the clicked coordinates
+    // map.on('click', function(e) {
+    //     const latlng = e.latlng;
+    //     const x = Math.floor(latlng.lng);
+    //     const y = Math.floor(latlng.lat);
+    //     alert(`X: ${Math.floor(x / MAX_CHUNK_SIZE)}, Y: ${Math.floor(-y / MAX_CHUNK_SIZE)}`);
+    // });
 
     map.on('mousemove', function (e) {
         const latlng = e.latlng;
