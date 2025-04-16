@@ -200,6 +200,7 @@ async function updatePlayerMarkers() {
             const tileUrl = tileLayer.getTileUrl(tileCoords);
             const oldMtimeMs = mtimeMsCache[tileUrl];
             const mtimeMs = await getMTimeMs(tileUrl);
+            console.log(oldMtimeMs, mtimeMs, tileUrl);
 
             const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
             const tileObj = tileLayer._tiles[tileKey];
@@ -207,6 +208,7 @@ async function updatePlayerMarkers() {
             if (tileObj && tileObj.el) {
                 const tile = tileObj.el;
                 if (mtimeMs && mtimeMs !== oldMtimeMs) {
+                    console.log('Tile updated:', tileUrl);
                     setMtimeMsCache(tileUrl, mtimeMs);
                     tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
                 }
