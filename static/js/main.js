@@ -81,12 +81,9 @@ const SmartTileLayer = L.TileLayer.extend({
         // adds mtimeMs to the tile url
         (async () => {
             const tileUrl = this.getTileUrl(coords);
-            let mtimeMs = mtimeMsCache[tileUrl];
-            if (!mtimeMs) {
-                mtimeMs = await getMTimeMs(tileUrl);
-                if (mtimeMs) setMtimeMsCache(tileUrl, mtimeMs);
-            }
-            tile.src = mtimeMs ? `${tileUrl}?mtimeMs=${mtimeMs}` : tileUrl;
+            const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
+            if (mtimeMs) tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+            else tile.src = tileUrl;
         })();
         return tile;
     },
@@ -207,11 +204,9 @@ async function updatePlayerMarkers() {
 
             if (tileObj && tileObj.el) {
                 const tile = tileObj.el;
-                if (mtimeMs && mtimeMs !== oldMtimeMs) {
-                    console.log('Tile updated:', tileUrl);
-                    setMtimeMsCache(tileUrl, mtimeMs);
-                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-                }
+                const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
+                if (mtimeMs) tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+                else tile.src = tileUrl;
             }
         }
     } catch (error) {
