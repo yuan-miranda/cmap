@@ -137,7 +137,6 @@ function dimensionTypeListener() {
 
 async function smartUpdateTiles() {
     if (!tileLayer || !tileLayer._tiles || isUpdatingTiles) return;
-    console.log('smartUpdateTiles called ' + isUpdatingTiles);
     isUpdatingTiles = true;
 
     const tiles = tileLayer._tiles;
@@ -175,10 +174,7 @@ async function smartUpdateTiles() {
 }
 
 function startUpdateTileInterval() {
-    intervalId = setInterval(() => {
-        console.log(`Updating tiles... ${isUpdatingTiles}`);
-        smartUpdateTiles();
-    }, 1000);
+    intervalId = setInterval(() => smartUpdateTiles(), 1000);
 }
 
 function stopUpdateTileInterval() {
