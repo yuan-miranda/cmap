@@ -81,12 +81,12 @@ const SmartTileLayer = L.TileLayer.extend({
         // adds mtimeMs to the tile url
         (async () => {
             const tileUrl = this.getTileUrl(coords);
-            const oldMtimeMs = mtimeMsCache[tileUrl];
-            const newMtimeMs = await getMTimeMs(tileUrl);
-            if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
-                setMtimeMsCache(tileUrl, newMtimeMs);
-                tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
-            } else tile.src = tileUrl;
+            let mtimeMs = mtimeMsCache[tileUrl];
+            if (!mtimeMs) {
+                mtimeMs = await getMTimeMs(tileUrl);
+                if (mtimeMs) setMtimeMsCache(tileUrl, mtimeMs);
+            }
+            tile.src = mtimeMs ? `${tileUrl}?mtimeMs=${mtimeMs}` : tileUrl;
         })();
         return tile;
     },
@@ -125,6 +125,13 @@ function displayCoordinates(map) {
     //     alert(`X: ${offsetX}, Y: ${offsetY}`);
     //     console.log(`X: ${offsetX}, Y: ${offsetY}`);
     // });
+
+    map.on('click', function(e) {
+        const latlng = e.latlng;
+        const x = Math.floor(latlng.lng);
+        const y = Math.floor(latlng.lat);
+        alert(`X: ${Math.floor(x / MAX_CHUNK_SIZE)}, Y: ${Math.floor(-y / MAX_CHUNK_SIZE) + 1}`);
+    });
 
     map.on('mousemove', function (e) {
         const latlng = e.latlng;
@@ -191,14 +198,18 @@ async function updatePlayerMarkers() {
             // determine the tile this marker is in
             const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
             const tileUrl = tileLayer.getTileUrl(tileCoords);
+            const oldMtimeMs = mtimeMsCache[tileUrl];
+            const mtimeMs = await getMTimeMs(tileUrl);
 
             const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
             const tileObj = tileLayer._tiles[tileKey];
 
             if (tileObj && tileObj.el) {
                 const tile = tileObj.el;
-                const timestamp = new Date().getTime();
-                tile.src = `${tileUrl}?timestamp=${timestamp}`;
+                if (mtimeMs && mtimeMs !== oldMtimeMs) {
+                    setMtimeMsCache(tileUrl, mtimeMs);
+                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+                }
             }
         }
     } catch (error) {
