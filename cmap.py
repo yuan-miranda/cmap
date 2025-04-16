@@ -150,14 +150,14 @@ def get_coordinates_db(dimension="overworld"):
 
     try:
         with conn.cursor() as cursor, open(dimension_path, "a") as file:
-            query = f"SELECT x, z FROM {dimension}"
+            query = f"SELECT player_name, x, z FROM {dimension}"
             cursor.execute(query)
             rows = cursor.fetchall()
 
             for row in rows:
-                x, z = row
+                player_name, x, z = row
                 coordinates.append((round(x), round(z)))
-                file.write(f"{x}, {z}\n")
+                file.write(f"{player_name}, {x}, {z}\n")
 
             file.flush()
             query = f"TRUNCATE TABLE {dimension}"
@@ -185,7 +185,7 @@ def get_coordinates(dimension="overworld"):
             if file.readline() is None:
                 return np.array(coordinates)
             for line in file:
-                x, z = map(str.strip, line.split(","))
+                player_name, x, z = map(str.strip, line.split(","))
                 coordinates.append((round(x), round(z)))
                 file.flush()
 
