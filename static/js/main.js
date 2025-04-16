@@ -81,9 +81,12 @@ const SmartTileLayer = L.TileLayer.extend({
         // adds mtimeMs to the tile url
         (async () => {
             const tileUrl = this.getTileUrl(coords);
-            const mtimeMs = mtimeMsCache[tileUrl] || await getMTimeMs(tileUrl);
-            if (mtimeMs) tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-            else tile.src = tileUrl;
+            const oldMtimeMs = mtimeMsCache[tileUrl];
+            const newMtimeMs = await getMTimeMs(tileUrl);
+            if (newMtimeMs && newMtimeMs !== oldMtimeMs) {
+                setMtimeMsCache(tileUrl, newMtimeMs);
+                tile.src = `${tileUrl}?mtimeMs=${newMtimeMs}`;
+            } else tile.src = tileUrl;
         })();
         return tile;
     },
@@ -188,18 +191,14 @@ async function updatePlayerMarkers() {
             // determine the tile this marker is in
             const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
             const tileUrl = tileLayer.getTileUrl(tileCoords);
-            const oldMtimeMs = mtimeMsCache[tileUrl];
-            const mtimeMs = await getMTimeMs(tileUrl);
 
             const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
             const tileObj = tileLayer._tiles[tileKey];
 
             if (tileObj && tileObj.el) {
                 const tile = tileObj.el;
-                if (mtimeMs && mtimeMs !== oldMtimeMs) {
-                    setMtimeMsCache(tileUrl, mtimeMs);
-                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-                }
+                const timestamp = new Date().getTime();
+                tile.src = `${tileUrl}?timestamp=${timestamp}`;
             }
         }
     } catch (error) {
