@@ -18,8 +18,11 @@ let map;
 let tileLayer;
 let worldName = 'world';
 let intervalId;
-let isUpdatingTiles = false;
 let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
+const playerMarkers = {};
+
+let updatingTilesCount = 0;
+const MAX_CONCURRENT_UPDATES = 1;
 
 async function handleDownload() {
     const world = localStorage.getItem('worldName') || worldName;
@@ -156,8 +159,8 @@ function dimensionTypeListener() {
 }
 
 async function smartUpdateTiles() {
-    if (!tileLayer || !tileLayer._tiles || isUpdatingTiles) return;
-    isUpdatingTiles = true;
+    if (!tileLayer || !tileLayer._tiles || updatingTilesCount >= MAX_CONCURRENT_UPDATES) return;
+    updatingTilesCount++;
 
     const tiles = tileLayer._tiles;
     const sortedKeys = Object.keys(tiles).sort((a, b) => {
@@ -189,12 +192,49 @@ async function smartUpdateTiles() {
     catch (error) {
     }
     finally {
-        isUpdatingTiles = false;
+        updatingTilesCount--;
+    }
+}
+
+async function updatePlayerMarkers() {
+    const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
+
+    try {
+        const response = await fetch(`/players-coordinates?world=${worldName}&dimension=${dimensionType}`);
+        if (!response.ok) return alert('Error fetching player coordinates');
+
+        const data = await response.json();
+        for (const player of data) {
+            const { player_name, x, z } = player;
+            const mapX = x + center.centerX;
+            const mapY = -z + center.centerY;
+            
+            const playerMarker = playerMarkers[player_name];
+            if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
+            else {
+                const marker = L.marker([mapY, mapX]).addTo(map);
+                marker.bindPopup(`${player_name}<br>x: ${x}, z: ${z}`);
+                playerMarkers[player_name] = marker;
+            }
+        }
+
+        // remove markers that are not in the data anymore
+        for (const playerName in playerMarkers) {
+            if (!data.find(player => player.player_name === playerName)) {
+                map.removeLayer(playerMarkers[playerName]);
+                delete playerMarkers[playerName];
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
     }
 }
 
 function startUpdateTileInterval() {
-    intervalId = setInterval(() => smartUpdateTiles(), 1000);
+    intervalId = setInterval(() => {
+        smartUpdateTiles();
+        updatePlayerMarkers();
+    }, 1000);
 }
 
 function stopUpdateTileInterval() {

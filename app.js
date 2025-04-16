@@ -1,9 +1,19 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
+const { Pool } = require('pg');
+require('dotenv').config();
+
 const app = express();
 const port = 3000;
+
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+});
 
 app.use(express.static(path.join(__dirname, 'static')));
 app.use("/node_modules", express.static(path.join(__dirname, 'node_modules')));
@@ -49,6 +59,18 @@ app.get("/download-coordinates-log", (req, res) => {
         if (!fs.existsSync(filePath)) return res.status(404).send('File not found');
 
         res.download(filePath);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+app.get("/players-coordinates", async (req, res) => {
+    const { world, dimension } = req.query;
+
+    try {
+        const query = `SELECT player_name, x, z, dimension FROM location WHERE dimension = $1`;
+        const response = await pool.query(query, [dimension]);
+        res.json(response.rows);
     } catch (err) {
         res.status(500).send(err.message);
     }
