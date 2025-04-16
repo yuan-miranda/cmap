@@ -192,19 +192,37 @@ async function updatePlayerMarkers() {
             // determine the tile this marker is in
             const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
             const tileUrl = tileLayer.getTileUrl(tileCoords);
-            const oldMtimeMs = mtimeMsCache[tileUrl];
-            const mtimeMs = await getMTimeMs(tileUrl);
+            // const oldMtimeMs = mtimeMsCache[tileUrl];
+            // const mtimeMs = await getMTimeMs(tileUrl);
 
             const tileKey = `${tileCoords.z}/${tileCoords.x}/${tileCoords.y}`;
             const tileObj = tileLayer._tiles[tileKey];
 
             if (tileObj && tileObj.el) {
                 const tile = tileObj.el;
-                if (mtimeMs && mtimeMs !== oldMtimeMs) {
-                    setMtimeMsCache(tileUrl, mtimeMs);
-                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-                }
+                const timestamp = new Date();
+                tile.src = `${tileUrl}?timestamp=${timestamp.getTime()}`;
             }
+
+
+
+
+            
+            // const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
+            // const tileUrl = tileLayer.getTileUrl(tileCoords);
+            // const oldMtimeMs = mtimeMsCache[tileUrl];
+            // const mtimeMs = await getMTimeMs(tileUrl);
+
+            // const tileKey = `${tileCoords.z}/${tileCoords.x}/${tileCoords.y}`;
+            // const tileObj = tileLayer._tiles[tileKey];
+
+            // if (tileObj && tileObj.el) {
+            //     const tile = tileObj.el;
+            //     if (mtimeMs && mtimeMs !== oldMtimeMs) {
+            //         setMtimeMsCache(tileUrl, mtimeMs);
+            //         tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+            //     }
+            // }
         }
     } catch (error) {
         console.error('Error:', error);
