@@ -127,7 +127,7 @@ function displayCoordinates(map) {
         const latlng = e.latlng;
         const x = Math.floor(latlng.lng);
         const y = Math.floor(latlng.lat);
-        alert(`X: ${Math.floor(x / MAX_CHUNK_SIZE)}, Y: ${Math.floor(-y / MAX_CHUNK_SIZE) + 1}`);
+        alert(`X: ${Math.floor(x / MAX_CHUNK_SIZE)}, Y: ${Math.floor(-y / MAX_CHUNK_SIZE)}`);
     });
 
     map.on('mousemove', function (e) {
