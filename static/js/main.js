@@ -43,7 +43,7 @@ async function handleDownload() {
 
 function getTileCoordinates(mapX, mapY, zoomlevel) {
     const tileX = Math.floor(mapX / MAX_CHUNK_SIZE);
-    const tileY = -Math.floor(mapY / MAX_CHUNK_SIZE);
+    const tileY = -Math.floor(mapY / MAX_CHUNK_SIZE) - 1;
     return { x: tileX, y: tileY, z: zoomlevel };
 }
 
