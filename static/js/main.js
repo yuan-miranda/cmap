@@ -23,12 +23,14 @@ const playerMarkers = {};
 
 const playerIcon = L.icon({
     iconUrl: '/images/Player.png',
-    iconSize: [32, 32]
+    iconSize: [32, 32],
+    className: 'map-icon player-icon'
 });
 
 const compassIcon = L.icon({
     iconUrl: '/images/Compass.png',
-    iconSize: [32, 32]
+    iconSize: [32, 32],
+    className: 'map-icon compass-icon'
 });
 
 async function handleDownload() {

@@ -56,6 +56,20 @@ body {
     margin: 0 1em 1em 0;
     z-index: 1000;
 }
+
 img {
     vertical-align: middle;
+}
+.map-icon {
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.map-icon:hover {
+    opacity: 0.4;
+    filter: brightness(0.9);
+}
+
+.map-icon:focus {
+    opacity: 1;
+    filter: none;
 }
