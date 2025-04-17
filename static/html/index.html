@@ -11,19 +11,23 @@
 <body>
     <div id="map"></div>
     <div class="coordinateDisplay">
-        <button id="downloadFileButton" title="Download File">
-            <img src="/images/download.svg" alt="download file" style="width: 1.5rem; height: 1.5rem;">
-        </button>
-        <select id="dimensionType">
-            <option value="overworld">overworld</option>
-            <option value="nether">nether</option>
-            <option value="end">end</option>
-        </select>
-        <p>x: <span id="x">0</span> z: <span id="z">0</span></p>
+        <div class="downloadWrapper">
+            <button id="downloadFileButton" title="Download File">
+                <img src="/images/Download.svg" alt="download file">
+            </button>
+        </div>
+        <div class="infoWrapper">
+            <select id="dimensionType">
+                <option value="overworld">overworld <img src="/images/Dirt.png" alt="overworld" class="dimensionIcon"></option>
+                <option value="nether">nether</option>
+                <option value="end">end</option>
+            </select>
+            <p>x: <span id="x">0</span> z: <span id="z">0</span></p>
+        </div>
     </div>
     <div class="urls">
         <a href="https://github.com/yuan-miranda/cmap/" target="_blank" title="GitHub Repository">
-            <img src="/images/github-mark.svg" alt="GitHub" style="width:24px;height:24px;">
+            <img src="/images/Github.svg" alt="GitHub" style="width:32px;height:32px;">
         </a>
     </div>
     <script src="/node_modules/leaflet/dist/leaflet.js"></script>

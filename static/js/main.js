@@ -21,6 +21,16 @@ let intervalId;
 let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
 const playerMarkers = {};
 
+const playerIcon = L.icon({
+    iconUrl: '/images/Player.png',
+    iconSize: [32, 32]
+});
+
+const compassIcon = L.icon({
+    iconUrl: '/images/Compass.png',
+    iconSize: [32, 32]
+});
+
 async function handleDownload() {
     const world = localStorage.getItem('worldName') || worldName;
     const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
@@ -99,6 +109,7 @@ function getMap() {
         crs: L.CRS.Simple,
         minZoom: zoom.min,
         maxZoom: zoom.max,
+        zoomControl: false,
         maxBounds: [[0, RESOLUTION], [-RESOLUTION, 0]],
         maxBoundsViscosity: 0.7,
         attributionControl: false,
@@ -146,8 +157,9 @@ function displayCoordinates(map) {
     });
 }
 
-function addMarker(map, y, x, text = '') {
-    const marker = L.marker([y, x]).addTo(map);
+function addMarker(map, icon, y, x, text = '') {
+    let marker = L.marker([y, x]).addTo(map);
+    if (icon) marker.setIcon(icon);
     marker.bindPopup(text ? text : `${x}, ${y}`);
 }
 
@@ -168,7 +180,7 @@ function dimensionTypeListener() {
         displayCoordinates(newMap);
 
         // marks the center of the map
-        addMarker(newMap, center.centerY, center.centerX, "0, 0");
+        addMarker(newMap, compassIcon, center.centerY, center.centerX, "0, 0");
     });
 
     const dimensionType = localStorage.getItem('dimensionType');
@@ -196,7 +208,7 @@ async function updatePlayerMarkers() {
             const playerMarker = playerMarkers[player_name];
             if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
             else {
-                const marker = L.marker([mapY, mapX]).addTo(map);
+                const marker = L.marker([mapY, mapX], { icon: playerIcon }).addTo(map);
                 marker.bindPopup(`${player_name}<br>x: ${x}, z: ${z}`);
                 playerMarkers[player_name] = marker;
             }
