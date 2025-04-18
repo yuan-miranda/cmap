@@ -179,10 +179,12 @@ function displayCoordinates(map) {
     });
 }
 
-function addMarker(map, icon, y, x, text = '') {
+function addMarker(map, icon, y, x, title, text = '') {
     let marker = L.marker([y, x]).addTo(map);
     if (icon) marker.setIcon(icon);
+    if (title) marker._icon.title = title;
     marker.bindPopup(text ? text : `${x}, ${y}`);
+    return marker;
 }
 
 function dimensionTypeListener() {
@@ -202,7 +204,7 @@ function dimensionTypeListener() {
         displayCoordinates(newMap);
 
         // marks the center of the map
-        addMarker(newMap, compassIcon, center.centerY, center.centerX, "0, 0");
+        addMarker(newMap, compassIcon, center.centerY, center.centerX, "spawn", "0, 0");
     });
 
     const dimensionType = localStorage.getItem('dimensionType');
@@ -215,10 +217,9 @@ function updateOrAddPlayerMarker(playerName, mapX, mapY, x, z, zoomlevel) {
     const playerMarker = playerMarkers[playerName];
     if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
     else {
-        const marker = L.marker([mapY, mapX], { icon: playerIcon }).addTo(map);
+        const marker = addMarker(map, playerIcon, mapY, mapX, playerName, `${playerName}<br>x: ${x}, z: ${z}`);
         playerMarkers[playerName] = marker;
 
-        marker.bindPopup(`${playerName}<br>x: ${x}, z: ${z}`);
         marker.on('dblclick', () => {
             // toggle follow player on double click
             if (followedPlayer === playerName) followedPlayer = null;
