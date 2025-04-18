@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Coordinate Mapper Interactive</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon"/>
-    <link rel="stylesheet" href="/css/styles.css"/>
-    <link rel="stylesheet" href="/node_modules/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/node_modules/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/styles.css" />
+
 </head>
+
 <body>
     <div id="map"></div>
     <div class="coordinateDisplay">
@@ -19,11 +22,12 @@
         </div>
         <div class="infoWrapper">
             <select id="dimensionType">
-                <option value="overworld">overworld <img src="/images/Dirt.png" alt="overworld" class="dimensionIcon"></option>
+                <option value="overworld">overworld <img src="/images/Dirt.png" alt="overworld" class="dimensionIcon">
+                </option>
                 <option value="nether">nether</option>
                 <option value="end">end</option>
             </select>
-            <p>x: <span id="x">0</span> z: <span id="z">0</span></p>
+            <p class="m-0">x: <span id="x">0</span> z: <span id="z">0</span></p>
         </div>
     </div>
     <div class="urls">
@@ -31,8 +35,13 @@
             <img src="/images/Github.svg" alt="GitHub" style="width:32px;height:32px;">
         </a>
     </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
     <script src="/node_modules/leaflet/dist/leaflet.js"></script>
-     <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/main.js"></script>
 </body>
+
 </html>

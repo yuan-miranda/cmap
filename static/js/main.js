@@ -1,4 +1,3 @@
-
 const RESOLUTION = 32768;
 const MAX_CHUNK_SIZE = 256;
 // const MAX_CHUNK_SIZE = 8192;
@@ -14,6 +13,7 @@ const zoom = {
     min: 0,
     max: 0
 }
+
 let map;
 let tileLayer;
 let worldName = 'world';
@@ -40,7 +40,7 @@ async function handleDownload() {
     try {
         const response = await fetch(`/download-coordinates-log?world=${world}&dimension=${dimensionType}`);
         if (!response.ok) return alert('Error downloading file');
-    
+
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -51,6 +51,28 @@ async function handleDownload() {
     } catch (error) {
         console.error('Error:', error);
     }
+}
+
+function createToast({
+    imgSrc = '...',
+    playerName = 'Player',
+    message = 'Joined the game',
+    toastId = `toast-${Date.now()}`,
+} = {}) {
+    const $container = $('.toast-container');
+    const $toast = $(
+        `<div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}">
+            <div class="toast-header rounded-bottom">
+                <img src="${imgSrc}" class="rounded me-2" alt="${playerName}" width="32" height="32">
+                <strong class="me-auto">${playerName}</strong>
+                <small class="text-body-secondary">${message}</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>`
+    );
+    $container.append($toast);
+    const toast = bootstrap.Toast.getOrCreateInstance($toast[0]);
+    toast.show();
 }
 
 function getTileCoordinates(mapX, mapY, zoomlevel) {
@@ -199,7 +221,7 @@ async function updatePlayerMarkers() {
         if (!response.ok) return console.error('Error fetching player coordinates');
 
         const data = await response.json();
-        
+
         const zoomlevel = map.getZoom();
 
         for (const player of data) {
@@ -264,20 +286,22 @@ function eventListener() {
             handlePanning();
         }
     });
-
     mapContainer.addEventListener('mouseup', function (e) {
         if (e.button === 0) {
             mapContainer.style.cursor = 'grab';
             handlePanEnd();
         }
     });
-
     downloadButton.addEventListener('click', handleDownload);
-
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     eventListener();
     dimensionTypeListener();
     startUpdateTileInterval();
+    createToast({
+        imgSrc: '/images/Player.png',
+        playerName: 'Server',
+        message: 'Map loaded',
+    });
 });
