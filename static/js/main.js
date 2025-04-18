@@ -214,6 +214,48 @@ function dimensionTypeListener() {
     select.dispatchEvent(new Event('change'));
 }
 
+function updateOrAddPlayerMarker(playerName, mapX, mapY, x, z, zoomlevel) {
+    const playerMarker = playerMarkers[playerName];
+    if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
+    else {
+        const marker = L.marker([mapY, mapX], { icon: playerIcon }).addTo(map);
+        marker.bindPopup(`${playerName}<br>x: ${x}, z: ${z}`);
+
+        marker.on('dblclick', () => {
+            // another double click will remove focus
+            if (followedPlayer === playerName) {
+                followedPlayer = null;
+                return map.setView([mapY, mapX], zoomlevel, { animate: true });
+            }
+            followedPlayer = playerName;
+            map.setView([mapY, mapX], zoomlevel, { animate: true });
+        });
+
+        playerMarkers[playerName] = marker;
+    }
+    // always focus on the player marker
+    if (followedPlayer === playerName) map.setView([mapY, mapX], zoomlevel, { animate: true });
+}
+
+async function refreshTile(mapX, mapY, zoomlevel) {
+    const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
+    const tileUrl = tileLayer.getTileUrl(tileCoords);
+    const oldMtimeMs = mtimeMsCache[tileUrl];
+    const mtimeMs = await getMTimeMs(tileUrl);
+
+    const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
+    const tileObj = tileLayer._tiles[tileKey];
+
+    if (tileObj && tileObj.el) {
+        const tile = tileObj.el;
+        // conditional cache busting
+        if (mtimeMs && mtimeMs !== oldMtimeMs) {
+            setMtimeMsCache(tileUrl, mtimeMs);
+            tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
+        }
+    }
+}
+
 async function updatePlayerMarkers() {
     const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
 
@@ -222,48 +264,14 @@ async function updatePlayerMarkers() {
         if (!response.ok) return console.error('Error fetching player coordinates');
 
         const data = await response.json();
-
         const zoomlevel = map.getZoom();
 
-        for (const player of data) {
-            const { player_name, x, z } = player;
+        for (const { player_name, x, z } of data) {
             const mapX = x + center.centerX;
             const mapY = -z + center.centerY;
 
-            const playerMarker = playerMarkers[player_name];
-            if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
-            else {
-                const marker = L.marker([mapY, mapX], { icon: playerIcon }).addTo(map);
-                marker.bindPopup(`${player_name}<br>x: ${x}, z: ${z}`);
-
-                marker.on('dblclick', () => {
-                    followedPlayer = player_name;
-                    map.setView([mapY, mapX], zoomlevel, { animate: true });
-                });
-
-                playerMarkers[player_name] = marker;
-            }
-
-            if (followedPlayer === player_name) {
-                map.setView([mapY, mapX], zoomlevel, { animate: true });
-            }
-
-            // determine the tile this marker is in
-            const tileCoords = getTileCoordinates(mapX, mapY, zoomlevel);
-            const tileUrl = tileLayer.getTileUrl(tileCoords);
-            const oldMtimeMs = mtimeMsCache[tileUrl];
-            const mtimeMs = await getMTimeMs(tileUrl);
-
-            const tileKey = `${tileCoords.x}:${tileCoords.y}:${tileCoords.z}`;
-            const tileObj = tileLayer._tiles[tileKey];
-
-            if (tileObj && tileObj.el) {
-                const tile = tileObj.el;
-                if (mtimeMs && mtimeMs !== oldMtimeMs) {
-                    setMtimeMsCache(tileUrl, mtimeMs);
-                    tile.src = `${tileUrl}?mtimeMs=${mtimeMs}`;
-                }
-            }
+            updateOrAddPlayerMarker(player_name, mapX, mapY, x, z, zoomlevel);
+            await refreshTile(mapX, mapY, zoomlevel);
         }
     } catch (error) {
         console.error('Error:', error);
