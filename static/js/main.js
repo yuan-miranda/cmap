@@ -18,7 +18,7 @@ let map;
 let tileLayer;
 let worldName = 'world';
 let intervalId;
-let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
+let mtimeMsCache = {};
 const playerMarkers = {};
 let followedPlayer = null;
 
@@ -32,6 +32,39 @@ const compassIcon = L.icon({
     iconUrl: '/images/Compass.png',
     iconSize: [32, 32],
     className: 'map-icon compass-icon'
+});
+
+// override createTile from TileLayer.js to add conditional cache busting.
+const SmartTileLayer = L.TileLayer.extend({
+    createTile: function (coords, done) {
+        var tile = document.createElement('img');
+
+        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
+        L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
+
+        if (this.options.crossOrigin || this.options.crossOrigin === '') {
+            tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+        }
+
+        if (typeof this.options.referrerPolicy === 'string') {
+            tile.referrerPolicy = this.options.referrerPolicy;
+        }
+
+        tile.alt = '';
+
+        // adds mtimeMs to the tile url
+        (async () => {
+            const tileUrl = this.getTileUrl(coords);
+            let mtimeMs = mtimeMsCache[tileUrl];
+
+            if (!mtimeMs) {
+                mtimeMs = await getMTimeMs(tileUrl);
+                if (mtimeMs) setMtimeMsCache(tileUrl, mtimeMs);
+            }
+            tile.src = mtimeMs ? `${tileUrl}?mtimeMs=${mtimeMs}` : tileUrl;
+        })();
+        return tile;
+    },
 });
 
 async function handleDownload() {
@@ -84,7 +117,6 @@ function getTileCoordinates(mapX, mapY, zoomlevel) {
 
 function setMtimeMsCache(key, value) {
     mtimeMsCache[key] = value;
-    localStorage.setItem('mtimeMsCache', JSON.stringify(mtimeMsCache));
 }
 
 async function getMTimeMs(tileUrl) {
@@ -92,41 +124,6 @@ async function getMTimeMs(tileUrl) {
     const response = await fetch(`/tiles-mtimeMs/${key}`);
     if (response.status === 200) return await response.text();
 }
-
-// override createTile from TileLayer.js to add mtimeMs to the tile url.
-// mtimeMs is a cache buster for the browser, it stays the same so long
-// as the tile is not modified hence the name mtimeMs.
-const SmartTileLayer = L.TileLayer.extend({
-    createTile: function (coords, done) {
-        var tile = document.createElement('img');
-
-        L.DomEvent.on(tile, 'load', L.Util.bind(this._tileOnLoad, this, done, tile));
-        L.DomEvent.on(tile, 'error', L.Util.bind(this._tileOnError, this, done, tile));
-
-        if (this.options.crossOrigin || this.options.crossOrigin === '') {
-            tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
-        }
-
-        if (typeof this.options.referrerPolicy === 'string') {
-            tile.referrerPolicy = this.options.referrerPolicy;
-        }
-
-        tile.alt = '';
-
-        // adds mtimeMs to the tile url
-        (async () => {
-            const tileUrl = this.getTileUrl(coords);
-            let mtimeMs = mtimeMsCache[tileUrl];
-
-            if (!mtimeMs) {
-                mtimeMs = await getMTimeMs(tileUrl);
-                if (mtimeMs) setMtimeMsCache(tileUrl, mtimeMs);
-            }
-            tile.src = mtimeMs ? `${tileUrl}?mtimeMs=${mtimeMs}` : tileUrl;
-        })();
-        return tile;
-    },
-});
 
 function getMap() {
     // create the map
@@ -219,19 +216,15 @@ function updateOrAddPlayerMarker(playerName, mapX, mapY, x, z, zoomlevel) {
     if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
     else {
         const marker = L.marker([mapY, mapX], { icon: playerIcon }).addTo(map);
-        marker.bindPopup(`${playerName}<br>x: ${x}, z: ${z}`);
+        playerMarkers[playerName] = marker;
 
+        marker.bindPopup(`${playerName}<br>x: ${x}, z: ${z}`);
         marker.on('dblclick', () => {
-            // another double click will remove focus
-            if (followedPlayer === playerName) {
-                followedPlayer = null;
-                return map.setView([mapY, mapX], zoomlevel, { animate: true });
-            }
-            followedPlayer = playerName;
+            // toggle follow player on double click
+            if (followedPlayer === playerName) followedPlayer = null;
+            else followedPlayer = playerName;
             map.setView([mapY, mapX], zoomlevel, { animate: true });
         });
-
-        playerMarkers[playerName] = marker;
     }
     // always focus on the player marker
     if (followedPlayer === playerName) map.setView([mapY, mapX], zoomlevel, { animate: true });
