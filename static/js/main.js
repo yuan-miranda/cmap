@@ -20,6 +20,7 @@ let worldName = 'world';
 let intervalId;
 let mtimeMsCache = JSON.parse(localStorage.getItem('mtimeMsCache') || '{}');
 const playerMarkers = {};
+let followedPlayer = null;
 
 const playerIcon = L.icon({
     iconUrl: '/images/Player.png',
@@ -234,7 +235,17 @@ async function updatePlayerMarkers() {
             else {
                 const marker = L.marker([mapY, mapX], { icon: playerIcon }).addTo(map);
                 marker.bindPopup(`${player_name}<br>x: ${x}, z: ${z}`);
+
+                marker.on('dblclick', () => {
+                    followedPlayer = player_name;
+                    map.setView([mapY, mapX], zoomlevel, { animate: true });
+                });
+
                 playerMarkers[player_name] = marker;
+            }
+
+            if (followedPlayer === player_name) {
+                map.setView([mapY, mapX], zoomlevel, { animate: true });
             }
 
             // determine the tile this marker is in
