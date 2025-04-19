@@ -213,10 +213,18 @@ function dimensionTypeListener() {
 }
 
 function updateOrAddPlayerMarker(playerName, dimension, mapX, mapY, x, z, zoomlevel) {
+    const select = document.getElementById('dimensionType');
     const playerMarker = playerMarkers[playerName];
+
     if (dimension !== localStorage.getItem('dimensionType')) {
         map.removeLayer(playerMarker);
         delete playerMarkers[playerName];
+
+        if (followedPlayer === playerName) {
+            select.value = dimension;
+            select.dispatchEvent(new Event('change'));
+            localStorage.setItem('dimensionType', dimension);
+        }
         return;
     }
     if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
@@ -270,6 +278,7 @@ async function updatePlayerMarkers() {
             await refreshTile(mapX, mapY, zoomlevel);
         }
     } catch (error) {
+        console.error('Error:', error);
     }
 }
 
