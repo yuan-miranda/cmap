@@ -65,11 +65,15 @@ app.get("/download-coordinates-log", (req, res) => {
 });
 
 app.get("/players-coordinates", async (req, res) => {
-    const { world, dimension } = req.query;
+    const { world } = req.query;
 
     try {
-        const query = `SELECT player_name, x, z, dimension FROM location WHERE dimension = $1`;
-        const response = await pool.query(query, [dimension]);
+        const query = `
+            SELECT player_name, x, z, dimension 
+            FROM location 
+            WHERE dimension IN ('overworld', 'nether', 'the_end')
+        `;
+        const response = await pool.query(query);
         res.json(response.rows);
     } catch (err) {
         res.status(500).send(err.message);

@@ -125,7 +125,7 @@ async function getMTimeMs(tileUrl) {
     if (response.status === 200) return await response.text();
 }
 
-function getMap() {
+function createMapInstance() {
     // create the map
     map = L.map('map', {
         crs: L.CRS.Simple,
@@ -136,10 +136,9 @@ function getMap() {
         maxBoundsViscosity: 0.7,
         attributionControl: false,
     }).setView([center.centerY, center.centerX], 0);
-    return map;
 }
 
-function addTileLayer(map, tilesUrl) {
+function addTileLayer(tilesUrl) {
     if (tileLayer) map.removeLayer(tileLayer);
 
     tileLayer = new SmartTileLayer(tilesUrl, {
@@ -148,7 +147,7 @@ function addTileLayer(map, tilesUrl) {
     }).addTo(map);
 }
 
-function displayCoordinates(map) {
+function displayCoordinates() {
     // display coordinates on click
     // map.on('click', function(e) {
     //     const latlng = e.latlng;
@@ -179,7 +178,7 @@ function displayCoordinates(map) {
     });
 }
 
-function addMarker(map, icon, y, x, title, text = '') {
+function addMarker(icon, y, x, title, text = '') {
     let marker = L.marker([y, x]).addTo(map);
     if (icon) marker.setIcon(icon);
     if (title) marker._icon.title = title;
@@ -198,13 +197,13 @@ function dimensionTypeListener() {
         localStorage.setItem('dimensionType', select.value);
 
         const tilesUrl = `/tiles/${worldName}/${select.value}/{z}/{x}/{y}.png`;
-        const newMap = getMap();
-
-        addTileLayer(newMap, tilesUrl);
-        displayCoordinates(newMap);
+        
+        createMapInstance();
+        addTileLayer(tilesUrl);
+        displayCoordinates();
 
         // marks the center of the map
-        addMarker(newMap, compassIcon, center.centerY, center.centerX, "spawn", "0, 0");
+        addMarker(compassIcon, center.centerY, center.centerX, "spawn", "0, 0");
     });
 
     const dimensionType = localStorage.getItem('dimensionType');
@@ -213,11 +212,16 @@ function dimensionTypeListener() {
     select.dispatchEvent(new Event('change'));
 }
 
-function updateOrAddPlayerMarker(playerName, mapX, mapY, x, z, zoomlevel) {
+function updateOrAddPlayerMarker(playerName, dimension, mapX, mapY, x, z, zoomlevel) {
     const playerMarker = playerMarkers[playerName];
+    if (dimension !== localStorage.getItem('dimensionType')) {
+        map.removeLayer(playerMarker);
+        delete playerMarkers[playerName];
+        return;
+    }
     if (playerMarker) playerMarker.setLatLng([mapY, mapX]);
     else {
-        const marker = addMarker(map, playerIcon, mapY, mapX, playerName, `${playerName}<br>x: ${x}, z: ${z}`);
+        const marker = addMarker(playerIcon, mapY, mapX, playerName, `${playerName}<br>x: ${x}, z: ${z}`);
         playerMarkers[playerName] = marker;
 
         marker.on('dblclick', () => {
@@ -251,24 +255,21 @@ async function refreshTile(mapX, mapY, zoomlevel) {
 }
 
 async function updatePlayerMarkers() {
-    const dimensionType = localStorage.getItem('dimensionType') || 'overworld';
-
     try {
-        const response = await fetch(`/players-coordinates?world=${worldName}&dimension=${dimensionType}`);
+        const response = await fetch(`/players-coordinates?world=${worldName}`);
         if (!response.ok) return console.error('Error fetching player coordinates');
 
         const data = await response.json();
         const zoomlevel = map.getZoom();
 
-        for (const { player_name, x, z } of data) {
+        for (const { player_name, x, z, dimension } of data) {
             const mapX = x + center.centerX;
             const mapY = -z + center.centerY;
 
-            updateOrAddPlayerMarker(player_name, mapX, mapY, x, z, zoomlevel);
+            updateOrAddPlayerMarker(player_name, dimension, mapX, mapY, x, z, zoomlevel);
             await refreshTile(mapX, mapY, zoomlevel);
         }
     } catch (error) {
-        console.error('Error:', error);
     }
 }
 
