@@ -109,6 +109,57 @@ function createToast({
     toast.show();
 }
 
+function createPlayerContextMenu() {
+
+}
+
+function createMapContextMenu(e) {
+    e.preventDefault();
+    const $contextMenu = $('#contextMenu');
+    const $copyCoordinatesBtn = $('#copyCoordinatesBtn');
+    const $copyTileBtn = $('#copyTileBtn');
+
+    const coordinates = `X: ${$('#x').text()} Z: ${$('#z').text()}`;
+    const tile = `TILE: ${$('#tileX').text()} ${$('#tileY').text()}`;
+
+    $copyCoordinatesBtn.text(coordinates);
+    $copyTileBtn.text(tile);
+    $copyCoordinatesBtn.attr('title', 'Copy coordinates to clipboard');
+    $copyTileBtn.attr('title', 'Copy tile to clipboard');
+
+    $contextMenu.css({
+        top: e.pageY + 'px',
+        left: e.pageX + 'px',
+    }).removeClass('hidden');
+
+    $contextMenu.on('click', function (e) {
+        e.stopPropagation();
+    });
+
+    $(document).on('click', function () {
+        $contextMenu.addClass('hidden');
+    });
+
+    $copyCoordinatesBtn.on('click', function () {
+        navigator.clipboard.writeText(coordinates).then(() => {
+            createToast({
+                imgSrc: '/images/Link.svg',
+                playerName: 'Coordinates copied to clipboard',
+                message: '',
+            });
+        });
+    });
+    $copyTileBtn.on('click', function () {
+        navigator.clipboard.writeText(tile).then(() => {
+            createToast({
+                imgSrc: '/images/Link.svg',
+                playerName: 'Tile copied to clipboard',
+                message: '',
+            });
+        });
+    });
+}
+
 function getTileCoordinates(mapX, mapY, zoomlevel) {
     const tileX = Math.floor(mapX / MAX_CHUNK_SIZE);
     const tileY = -Math.floor(mapY / MAX_CHUNK_SIZE) - 1;
@@ -171,10 +222,10 @@ function displayCoordinates() {
         const latlng = e.latlng;
         const x = Math.floor(latlng.lng);
         const y = Math.floor(latlng.lat);
-        const offsetX = Math.floor(x - center.centerX);
-        const offsetY = Math.floor(y - center.centerY);
-        document.getElementById('x').textContent = offsetX;
-        document.getElementById('z').textContent = -offsetY;
+        document.getElementById('x').textContent = Math.floor(x - center.centerX);
+        document.getElementById('z').textContent = -Math.floor(y - center.centerY);
+        document.getElementById('tileX').textContent = Math.floor(x / MAX_CHUNK_SIZE);
+        document.getElementById('tileY').textContent = Math.floor(-y / MAX_CHUNK_SIZE);
     });
 }
 
@@ -197,7 +248,7 @@ function dimensionTypeListener() {
         localStorage.setItem('dimensionType', select.value);
 
         const tilesUrl = `/tiles/${worldName}/${select.value}/{z}/{x}/{y}.png`;
-        
+
         createMapInstance();
         addTileLayer(tilesUrl);
         displayCoordinates();
@@ -303,28 +354,24 @@ function handlePanEnd() {
 function eventListener() {
     const mapContainer = document.getElementById('map');
     const downloadButton = document.getElementById('downloadFileButton');
-    mapContainer.addEventListener('mousedown', function (e) {
+    mapContainer.addEventListener('mousedown', (e) => {
         if (e.button === 0) {
             mapContainer.style.cursor = 'grabbing';
             handlePanning();
         }
     });
-    mapContainer.addEventListener('mouseup', function (e) {
+    mapContainer.addEventListener('mouseup', (e) => {
         if (e.button === 0) {
             mapContainer.style.cursor = 'grab';
             handlePanEnd();
         }
     });
     downloadButton.addEventListener('click', handleDownload);
+    mapContainer.addEventListener('contextmenu', createMapContextMenu);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     eventListener();
     dimensionTypeListener();
     startUpdateTileInterval();
-    createToast({
-        imgSrc: '/images/Player.png',
-        playerName: 'Server',
-        message: 'Map loaded',
-    });
 });

@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="/node_modules/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="/css/styles.css" />
-
 </head>
 
 <body>
@@ -26,7 +25,8 @@
                 <option value="nether">Nether</option>
                 <option value="the_end">End</option>
             </select>
-            <p class="m-0">x: <span id="x">0</span> z: <span id="z">0</span></p>
+            <p class="m-0">X: <span id="x">0</span> Z: <span id="z">0</span> TILE: <span id="tileX">0</span> <span
+                    id="tileY">0</span></p>
         </div>
     </div>
     <div class="urls">
@@ -34,8 +34,14 @@
             <img src="/images/Github.svg" alt="GitHub" style="width:32px;height:32px;">
         </a>
     </div>
-
     <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+    <div class="list-group context-menu hidden" id="contextMenu">
+        <ul>
+            <li><button type="button" id="copyCoordinatesBtn" class="list-group-item list-group-item-action"></button>
+            </li>
+            <li><button type="button" id="copyTileBtn" class="list-group-item list-group-item-action"></button></li>
+        </ul>
+    </div>
 
     <script src="/node_modules/leaflet/dist/leaflet.js"></script>
     <script src="/node_modules/jquery/dist/jquery.min.js"></script>
