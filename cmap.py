@@ -311,7 +311,11 @@ def main():
     if mode_arg == "realtime":
         if dimension_arg == "all":
             print(
-                f"'{mode_arg}' mode already updates all dimensions. Ignoring '{dimension_arg}' argument."
+                f"'{mode_arg}' mode already updates all dimensions. Ignoring '{dimension_arg}' argument and using 'all'."
+            )
+        elif readfrom_arg == "file":
+            print(
+                f"'{mode_arg}' mode only works with 'db' from --readfrom argument. Ignoring '{readfrom_arg}' argument and using 'db'."
             )
 
         try:
