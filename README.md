@@ -1,4 +1,4 @@
-## Coordinate Mapper (cmap)
+## Coordinate Mapper (cmap) - OUTDATED README
 Visualize minecraft player coordinates generated from the coordinates [cmap-paper](https://github.com/yuan-miranda/cmap-paper) sent using Leaflet.js for rendering the image tiles on the website. This is similar to [2b2t Nocom heatmap](https://en.m.wikipedia.org/wiki/File:2b2t_Nocom_Overworld_Heatmap.png), but with each coordinate represented as a dot and not being a heatmap.
 
 > [realtimeChunkImage.py](https://github.com/yuan-miranda/cmap/blob/main/cmap_scripts/realtimeChunkImage.py) main script.<br>
